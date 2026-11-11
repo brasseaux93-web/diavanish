@@ -1,1 +1,483 @@
-PLACEHOLDER
+/* Fonts are bundled with the app: no third-party font host learns who opened a room. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-500.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── DIAVANISH ─ ledger precision.
+   One family, squared geometry and horizontal rules taken from the mark (a
+   solid D that breaks into bars). Sage acts, clay seals, ochre warns.
+   Dark by design: the approved wordmark is white ink. ── */
+
+:root {
+  --button-outline: rgba(255, 255, 255, 0.08);
+  --badge-outline: rgba(255, 255, 255, 0.05);
+  --opaque-button-border-intensity: 10;
+  --elevate-1: rgba(255, 255, 255, 0.03);
+  --elevate-2: rgba(255, 255, 255, 0.07);
+
+  /* Obsidian slate (honed granite): three matte tone steps, no pure black.
+     base #0B0C10 · raised #111318 · cards #161922 · controls #1E222C */
+  --background: 228 18.5% 5.3%;      /* #0B0C10 base */
+  --foreground: 50 14% 84%;          /* warm parchment ink, unchanged */
+  --parchment: #F4EEDD;              /* warm ivory for titles & high-clarity hierarchy */
+  --border: 225 9% 18%;              /* solid fallback ≈ white 7% on raised */
+  --card: 225 21.4% 11%;             /* #161922 */
+  --card-foreground: 50 14% 84%;
+  --card-border: 225 9% 18%;
+  --sidebar: 223 17.1% 8%;           /* #111318 */
+  --sidebar-foreground: 50 14% 84%;
+  --sidebar-border: 225 9% 18%;
+  --sidebar-primary: 145 16% 64%;
+  --sidebar-primary-foreground: 228 18.5% 5.3%;
+  --sidebar-accent: 223 18.9% 14.5%;
+  --sidebar-accent-foreground: 50 14% 84%;
+  --sidebar-ring: 145 16% 64%;
+  --popover: 225 21.4% 11%;          /* #161922 */
+  --popover-foreground: 50 14% 84%;
+  --popover-border: 225 9% 21%;
+  --primary: 145 16% 64%;            /* sage, unchanged */
+  --primary-foreground: 228 18.5% 5.3%;
+  --secondary: 223 18.9% 14.5%;      /* #1E222C */
+  --secondary-foreground: 50 14% 84%;
+  --muted: 223 18.9% 14.5%;
+  --muted-foreground: 55 6% 60%;     /* unchanged: 5.9:1 on the lightest slate step */
+  --accent: 223 18.9% 14.5%;
+  --accent-foreground: 50 14% 84%;
+  --destructive: 6 52% 64%;
+  --destructive-foreground: 50 14% 92%;
+  --input: 225 8% 42%;               /* field edge ≥3:1 on base and raised */
+  --ring: 145 16% 64%;
+  --chart-1: 145 16% 64%;
+  --chart-2: 30 30% 64%;
+  --chart-3: 190 14% 62%;
+  --chart-4: 45 30% 66%;
+  --chart-5: 10 30% 64%;
+
+  /* Vault extras */
+  /* Natural, low-chroma accents: sage, clay, moss, sand. Nothing glows. */
+  --seal: 30 30% 64%;       /* clay — sealing, immutability */
+  --ok: 145 16% 64%;        /* same sage as actions: one affirmative colour */
+  --warn: 44 58% 64%;       /* ochre — needs attention, never alarm; warmer and brighter than the clay seal */
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --font-sans: "Geist Variable", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-display: "Geist Variable", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-serif: var(--font-sans);
+
+  /* Shape: pill actions, soft fields and cards. Colours above are unchanged. */
+  --radius: 0.375rem;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;    /* tags, tiny controls */
+  --radius-md: 0.375rem;   /* buttons, menu items */
+  --radius-lg: 0.375rem;   /* inputs, list rows */
+  --radius-xl: 0.5rem;     /* cards, bubbles */
+  --radius-2xl: 0.625rem;  /* main panels */
+
+  /* Type scale */
+  --text-meta: 0.75rem;
+  --text-body: 0.9375rem;
+  --text-chat: 1rem;       /* chat reads well over a long session */
+  --text-title: 1.125rem;
+
+  /* Elevation: tone steps on honed slate, never cast shadows. */
+  --slate-base: #0B0C10;
+  --slate-raised: #111318;
+  --slate-card: #161922;
+  --slate-control: #1E222C;
+  --surface-1: var(--slate-raised);        /* main working panel */
+  --surface-2: var(--slate-card);          /* raised inside a panel: composer, popovers */
+  --surface-sunk: var(--slate-base);       /* wells, inputs inside panels */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    @apply antialiased;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "ss01";
+    line-height: 1.55;
+    caret-color: hsl(var(--primary));
+  }
+
+  h1, h2, h3 { text-wrap: balance; }
+
+  /* Browser surfaces follow the palette. */
+  * { scrollbar-width: thin; scrollbar-color: hsl(0 0% 100% / 0.14) transparent; }
+  a, button { text-underline-offset: 3px; }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.28);
+  }
+}
+
+@layer utilities {
+  .hairline-b {
+    border-bottom: 1px solid hsl(var(--card-border));
+  }
+
+  .mono-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .seal-brass {
+    color: hsl(var(--seal));
+  }
+
+  .text-ivory {
+    color: var(--parchment);
+  }
+
+  /* Hover on a hairline card: the edge firms up; nothing glows. */
+  .line-hover {
+    transition: border-color 200ms var(--ease-calm), background-color 200ms var(--ease-calm);
+  }
+  .line-hover:hover {
+    border-color: hsl(var(--primary) / 0.35);
+    background-color: hsl(0 0% 100% / 0.015);
+  }
+
+  .dir-rtl .flip-rtl {
+    transform: scaleX(-1);
+  }
+}
+
+/* Seal ceremony ring */
+@keyframes seal-in {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.seal-mark {
+  animation: seal-in 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes iris-open {
+  from { transform: scale(0.92); opacity: 0.4; }
+  to { transform: scale(1); opacity: 1; }
+}
+.iris-in {
+  animation: iris-open 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seal-mark, .iris-in { animation: none; }
+}
+
+/* ── Permanent things (sealed ledger, fingerprints, safety codes) sit on a
+   firmer edge. No texture, no gradient. ── */
+.metal {
+  --metal-face: var(--slate-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xl);
+  background: var(--metal-face);
+}
+.metal-card { --metal-face: var(--slate-card); }
+.metal-strip {
+  --metal-face: var(--slate-base);
+  border-radius: var(--radius-lg);
+  padding: 0.5rem 0.75rem;
+}
+.metal.divide-line > * + *, .metal .divide-line > * + * { border-top-color: var(--line); }
+.metal-rule { border-top: 1px solid var(--line); }
+@media (forced-colors: active) { .metal { border-color: CanvasText; background: Canvas; } }
+
+/* Pages arrive with one short fade; nothing staggers. */
+@keyframes rise {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.page-enter { animation: rise 180ms var(--ease-calm) both; }
+
+/* The breathing aperture: one cycle every 10 s (six breaths a minute,
+   the pace slow-breathing studies use). Follow it while you wait. */
+@keyframes breathe {
+  0%, 100% { transform: scale(0.86); opacity: 0.55; }
+  45%, 55% { transform: scale(1); opacity: 1; }
+}
+.breathe { animation: breathe 10s ease-in-out infinite; transform-origin: center; }
+.breathe-slow-spin { animation: spin 240s linear infinite; transform-origin: center; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Calm time: a hairline that drains instead of digits that tick */
+.time-line { height: 2px; border-radius: 2px; background: hsl(var(--foreground) / 0.08); overflow: hidden; }
+.time-line > span { display: block; height: 100%; background: hsl(var(--primary) / 0.7); transition: width 1s linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .breathe, .breathe-slow-spin, .vanish-line { animation: none !important; }
+}
+
+/* ── Spacing + line tokens (one scale, every view) ── */
+:root {
+  /* Hairline orthogonal rules: white at 7%, one step stronger for controls. */
+  --line: hsl(0 0% 100% / 0.07);
+  --line-strong: hsl(0 0% 100% / 0.11);
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 2.5rem;
+  --space-7: 3.5rem;
+}
+/* Shadcn borders follow the same hairline */
+.border-border { border-color: var(--line); }
+.divide-line > * + * { border-top: 1px solid var(--line); }
+
+/* Typography-led hierarchy instead of boxes */
+.section-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+}
+.section-count { font-family: var(--font-mono); font-size: 0.75rem; color: hsl(var(--muted-foreground)); }
+/* Tint is reserved for what is live right now */
+.surface-active {
+  background: hsl(var(--primary) / 0.06);
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.22);
+  transition: background-color 600ms var(--ease-calm), box-shadow 600ms var(--ease-calm);
+}
+.row-hover { transition: background-color 160ms; }
+.row-hover:hover { background: hsl(0 0% 100% / 0.025); }
+/* ── Shell chrome (in components layer so layout utilities like hidden sm:inline-flex always win) ── */
+@layer components {
+  .shell-bar {
+    background: var(--slate-base);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-link {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: var(--radius-md);
+    color: hsl(var(--muted-foreground));
+    transition: color 160ms;
+  }
+  .nav-link:hover { color: hsl(var(--foreground)); }
+  .nav-link[aria-current="page"] { color: hsl(var(--foreground)); }
+  .account-chip, .signin-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    height: 2rem; padding: 0 0.625rem;
+    font-size: 0.8125rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    color: hsl(var(--muted-foreground));
+    transition: border-color 160ms, background-color 160ms, color 160ms;
+  }
+  .account-chip:hover { color: hsl(var(--foreground)); background: hsl(var(--foreground) / 0.05); }
+  .signin-btn { color: hsl(var(--foreground)); border-color: var(--line-strong); font-weight: 500; padding: 0 0.75rem; }
+  .signin-btn:hover { background: hsl(var(--foreground) / 0.06); }
+  .demo-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    height: 2.25rem; padding: 0 0.75rem; border-radius: var(--radius-md);
+    font-size: 0.8125rem; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    transition: color 160ms, background-color 160ms;
+  }
+  .demo-btn:hover:not(:disabled) { color: hsl(var(--foreground)); background: hsl(var(--foreground) / 0.05); }
+  .demo-btn:disabled { opacity: 0.6; }
+  .hero-cta { height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; }
+  .cta-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent; font-weight: 600; }
+  .cta-primary:hover { background: hsl(var(--primary) / 0.88); }
+  .side-action {
+    display: block; width: 100%; text-align: start;
+    font-size: 0.875rem; padding: 0.5rem 0.625rem; margin-inline: -0.625rem; width: calc(100% + 1.25rem);
+    border-radius: var(--radius-lg); color: hsl(var(--foreground) / 0.85);
+    transition: background-color 160ms, color 160ms;
+  }
+  .side-action:hover { background: hsl(0 0% 100% / 0.04); color: hsl(var(--foreground)); }
+  .side-action.text-destructive { color: hsl(var(--destructive)); }
+}
+.font-arabic { font-family: "IBM Plex Sans Arabic", sans-serif; letter-spacing: 0 !important; text-transform: none !important; }
+.demo-ribbon {
+  border-top: 1px solid var(--line);
+  background: hsl(var(--seal) / 0.05);
+}
+.demo-tag {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.75rem; font-weight: 500; color: hsl(var(--seal));
+}
+.demo-tag::before { content: ""; width: 6px; height: 6px; border-radius: 99px; background: currentColor; opacity: 0.8; }
+.ribbon-btn {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.2rem 0.5rem; border-radius: var(--radius-md); color: hsl(var(--muted-foreground));
+  transition: color 200ms, background-color 200ms;
+}
+.ribbon-btn:hover { color: hsl(var(--foreground)); background: hsl(var(--foreground) / 0.05); }
+
+/* ── Arabic: never track or uppercase joined script ── */
+.dir-rtl *:not(.mono-data):not([lang="en"]) { letter-spacing: 0 !important; }
+.dir-rtl .demo-tag {
+  font-family: "IBM Plex Sans Arabic", sans-serif;
+  font-size: 0.8125rem;
+}
+.dir-rtl .font-display, .dir-rtl h1, .dir-rtl h2, .dir-rtl h3 {
+  font-family: "IBM Plex Sans Arabic", var(--font-display);
+  line-height: 1.35;
+}
+
+.font-display.font-bold, .font-display.font-extrabold, h1.font-display, h2.font-display { font-weight: 600; }
+.font-display { letter-spacing: -0.02em; }
+
+/* ── Keyboard focus: every custom control shows where focus is ── */
+:where(a, button, [role="button"], [tabindex], input, select, textarea, summary):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+[role="log"]:focus-visible { outline-offset: 4px; border-radius: 0.375rem; }
+.skip-link {
+  position: absolute; inset-inline-start: 1rem; top: -4rem; z-index: 60;
+  display: inline-flex; align-items: center; min-height: 2.75rem;
+  padding: 0.5rem 0.875rem; border-radius: var(--radius-md);
+  background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+  font-size: 0.875rem; font-weight: 500;
+  transition: top 160ms var(--ease-calm);
+}
+.skip-link:focus-visible { top: 0.75rem; }
+
+/* ── Surfaces: one step of elevation for the panel you are working in ── */
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2xl);
+}
+.side-panel > * + * { border-top: 1px solid var(--line); }
+.side-title { font-size: var(--text-meta); font-weight: 500; color: hsl(var(--muted-foreground)); margin-bottom: 0.625rem; }
+
+/* ── Tags: a quiet fill, never an outlined pill. Colour only for state. ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  min-height: 1.5rem; padding: 0 0.5rem;
+  border-radius: var(--radius-sm);
+  background: hsl(var(--foreground) / 0.06);
+  font-size: 0.75rem; font-weight: 500; line-height: 1; white-space: nowrap;
+  color: hsl(var(--muted-foreground));
+  transition: background-color 160ms, color 160ms;
+}
+button.chip:hover { background: hsl(var(--foreground) / 0.1); color: hsl(var(--foreground)); }
+.chip svg { width: 0.8rem; height: 0.8rem; flex-shrink: 0; }
+.chip-live { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.1); }
+.chip-ok { color: hsl(var(--ok)); background: hsl(var(--ok) / 0.1); }
+.chip-warn { color: hsl(var(--warn)); background: hsl(var(--warn) / 0.1); }
+.chip-seal { color: hsl(var(--seal)); background: hsl(var(--seal) / 0.1); }
+.chip-danger { color: hsl(var(--destructive)); background: hsl(var(--destructive) / 0.1); }
+button.chip-ok:hover { color: hsl(var(--ok)); background: hsl(var(--ok) / 0.16); }
+button.chip-warn:hover { color: hsl(var(--warn)); background: hsl(var(--warn) / 0.16); }
+
+/* Room facts: one line of plain text, separated by space rather than boxes. */
+.room-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; font-size: 0.8125rem; color: hsl(var(--muted-foreground)); }
+.room-meta .chip { background: transparent; padding: 0; min-height: 1.5rem; font-size: 0.8125rem; font-weight: 400; }
+.room-meta button.chip { text-decoration: underline; text-decoration-color: hsl(var(--foreground) / 0.2); }
+.room-meta button.chip:hover { background: transparent; text-decoration-color: currentColor; }
+.room-meta .chip-live, .room-meta .chip-warn, .room-meta .chip-danger { font-weight: 500; }
+.room-meta .chip-warn { background: hsl(var(--warn) / 0.1); padding: 0 0.5rem; text-decoration: none !important; }
+.room-meta .chip-danger { background: hsl(var(--destructive) / 0.1); padding: 0 0.5rem; }
+
+/* ── Tabs: text on a rule, the current one underlined. ── */
+.segmented {
+  display: inline-flex; align-items: stretch; gap: 1.5rem;
+  max-width: 100%; overflow-x: auto; scrollbar-width: none;
+}
+.segmented::-webkit-scrollbar { display: none; }
+.segmented > button, .segmented > [role="tab"] {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  height: 2.5rem; padding: 0;
+  font-size: 0.875rem; font-weight: 500; white-space: nowrap;
+  color: hsl(var(--muted-foreground));
+  transition: color 160ms;
+}
+.segmented > button::after, .segmented > [role="tab"]::after {
+  content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 2px;
+  background: transparent; transition: background-color 160ms;
+}
+.segmented > button:hover, .segmented > [role="tab"]:hover { color: hsl(var(--foreground)); }
+.segmented > [aria-selected="true"], .segmented > [aria-pressed="true"], .segmented > [aria-checked="true"], .segmented > [data-state="active"] {
+  color: hsl(var(--foreground));
+}
+.segmented > [aria-selected="true"]::after, .segmented > [aria-pressed="true"]::after, .segmented > [aria-checked="true"]::after, .segmented > [data-state="active"]::after {
+  background: hsl(var(--primary));
+}
+.segmented > button:focus-visible, .segmented > [role="tab"]:focus-visible { outline-offset: -2px; }
+.segmented .count { font-family: var(--font-mono); font-size: 0.75rem; color: hsl(var(--muted-foreground)); }
+/* The row a tab list sits in carries the rule. */
+.tabs-bar { display: flex; align-items: center; gap: 1.5rem; border-bottom: 1px solid var(--line); }
+/* Narrow screens: tighter tabs, and a soft edge so a row that scrolls reads as scrollable. */
+@media (max-width: 480px) {
+  .tabs-bar > .segmented:not(.segmented-box) {
+    gap: 0.75rem; padding-inline-end: 1.25rem; scroll-padding-inline: 1.25rem;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.25rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.25rem), transparent);
+  }
+  [dir="rtl"] .tabs-bar > .segmented:not(.segmented-box) {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 1.25rem), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 1.25rem), transparent);
+  }
+}
+/* Text people typed (room titles): it keeps its own reading direction, so truncation cuts the end,
+   not the beginning, but it stays aligned with the page around it. */
+.user-text { text-align: left; }
+[dir="rtl"] .user-text { text-align: right; }
+/* Native select, drawn like the other fields (used where a plain menu is enough). */
+.select-native {
+  height: 2.5rem; max-width: 100%; padding: 0 2.25rem 0 0.75rem; font-size: 0.875rem;
+  color: hsl(var(--foreground)); background-color: transparent;
+  border: 1px solid hsl(var(--input)); border-radius: var(--radius-md);
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.6rem center; background-size: 1rem;
+}
+.select-native:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* ── Sitewide physical texture (ultra-fine grain + soft vignette) ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.18) 100%);
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { opacity: 0.06; }
+}
