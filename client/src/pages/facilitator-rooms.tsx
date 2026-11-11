@@ -27,8 +27,6 @@ export default function FacilitatorRooms() {
   const rooms = useQuery<Room[]>({ queryKey: ["/api/facilitator/rooms"], refetchInterval: 5000 });
 
   useEffect(() => {
-    // Signed out, or signed in as another role (an admin or participant
-    // wandering here would otherwise see a misleading empty room list).
     if (session.data === null || (session.data && session.data.role !== "facilitator")) {
       navigate("/facilitate");
     }
@@ -73,165 +71,135 @@ export default function FacilitatorRooms() {
 
   return (
     <Shell sessionRole="facilitator" title={t("my_rooms")}>
-      <PageHead title={t("my_rooms")} action={
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-new-room">{t("new_room")}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[92dvh] overflow-y-auto p-5 sm:p-7">
-            <DialogHeader>
-              <DialogTitle className="font-display">{t("new_room")}</DialogTitle>
-              <DialogDescription className="sr-only">{t("tier_title")}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6 min-w-0">
-              <div className="space-y-2">
-                <Label htmlFor="r-title">{t("room_title")}</Label>
-                <Input id="r-title" data-testid="input-room-title" value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })} />
-              </div>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium">{t("tier_title")}</h3>
-                <TierPicker value={tier} onChange={setTier} />
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium">{t("th_title")}</h3>
-                <ThresholdPicker value={threshold} onChange={setThreshold} />
-              </section>
-
-              {/* The identity decision */}
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium">{t("anonymity_heading")}</h3>
-                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("anonymity_heading")}>
-                  {(["anonymous", "open"] as const).map((m) => (
-                    <button key={m} type="button" role="radio" data-testid={m === "anonymous" ? "button-anon-mode" : "button-open-mode"}
-                      aria-checked={form.anonymityMode === m}
-                      onClick={() => setForm({ ...form, anonymityMode: m })}
-                      className={`rounded-md border px-3.5 py-3 text-start transition-colors ${
-                        form.anonymityMode === m ? "border-[hsl(var(--foreground)/0.32)] bg-[var(--slate-control)]" : "border-[var(--line)] hover:border-[var(--line-strong)]"
-                      }`}>
-                      <span className="block text-sm font-medium">{m === "anonymous" ? t("anonymity_anon") : t("anonymity_open")}</span>
-                      <span className="block mt-1 text-xs text-muted-foreground text-pretty">{m === "anonymous" ? t("anonymity_anon_note") : t("anonymity_open_note")}</span>
-                    </button>
-                  ))}
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl tracking-tight text-white">{t("my_rooms")}</h1>
+            <p className="mt-1 text-sm text-zinc-400 font-mono">Ephemeral rooms · Outcome summaries only</p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-new-room">{t("new_room")}</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto bg-zinc-950 border-white/[0.08] p-6">
+              <DialogHeader>
+                <DialogTitle className="font-serif text-xl">{t("new_room")}</DialogTitle>
+                <DialogDescription className="text-zinc-400 text-sm">Configure room parameters and sealing rules.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="r-title" className="text-xs uppercase tracking-wider text-zinc-400">Title</Label>
+                  <Input id="r-title" data-testid="input-room-title" value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })} />
                 </div>
-              </section>
 
-              {sealedV2.length > 0 && (
                 <section className="space-y-2">
-                  <Label>{t("series_continue")}</Label>
-                  <Select value={continueFrom} onValueChange={setContinueFrom}>
-                    <SelectTrigger data-testid="select-continue-from" aria-label={t("series_continue")}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fresh">{t("series_fresh")}</SelectItem>
-                      {sealedV2.map((r) => <SelectItem key={r.id} value={r.code}>{r.title} · {r.code}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  {continueFrom !== "fresh" && <p className="text-xs text-muted-foreground text-pretty">{t("series_note")}</p>}
+                  <h3 className="text-xs uppercase tracking-wider text-zinc-400">{t("tier_title")}</h3>
+                  <TierPicker value={tier} onChange={setTier} />
                 </section>
-              )}
 
-              <details className="disclose">
-                <summary className="text-sm text-muted-foreground hover:text-foreground min-h-9">
-                  <ChevronRight className="chev h-3.5 w-3.5" aria-hidden />{t("nr_more")}
-                </summary>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="r-purpose">{t("purpose")}</Label>
-                    <Input id="r-purpose" value={form.purpose}
-                      onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
+                <section className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wider text-zinc-400">{t("th_title")}</h3>
+                  <ThresholdPicker value={threshold} onChange={setThreshold} />
+                </section>
+
+                <section className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wider text-zinc-400">Anonymity</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["anonymous", "open"] as const).map((m) => (
+                      <button key={m} type="button"
+                        onClick={() => setForm({ ...form, anonymityMode: m })}
+                        className={`border px-3 py-2.5 text-left text-sm transition-colors ${
+                          form.anonymityMode === m ? "border-white/30 bg-white/[0.04]" : "border-white/[0.08] hover:border-white/20"
+                        }`}>
+                        <span className="block font-medium">{m === "anonymous" ? "Anonymous" : "Open"}</span>
+                        <span className="block mt-0.5 text-xs text-zinc-500">{m === "anonymous" ? "Pseudonyms only" : "Names visible"}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="r-days">{t("duration_days")}</Label>
-                      <Input id="r-days" type="number" min={1} value={form.durationDays}
-                        onChange={(e) => setForm({ ...form, durationDays: Number(e.target.value) })} />
+                </section>
+
+                {sealedV2.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs uppercase tracking-wider text-zinc-400">Continue series</Label>
+                    <Select value={continueFrom} onValueChange={setContinueFrom}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fresh">Fresh room</SelectItem>
+                        {sealedV2.map((r) => <SelectItem key={r.id} value={r.code}>{r.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <details className="border-t border-white/[0.08] pt-3">
+                  <summary className="text-xs text-zinc-500 cursor-pointer">Additional options</summary>
+                  <div className="space-y-3 pt-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="r-purpose" className="text-xs text-zinc-400">Purpose</Label>
+                      <Input id="r-purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="r-session">{t("session_time")}</Label>
-                      <Input id="r-session" type="datetime-local" value={form.sessionAt}
-                        onChange={(e) => setForm({ ...form, sessionAt: e.target.value })} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-zinc-400">Duration (days)</Label>
+                        <Input type="number" min={1} value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: Number(e.target.value) })} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-zinc-400">Session time</Label>
+                        <Input type="datetime-local" value={form.sessionAt} onChange={(e) => setForm({ ...form, sessionAt: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-300">Require role proof</span>
+                      <Switch checked={form.requiresRoleProof} onCheckedChange={(v) => setForm({ ...form, requiresRoleProof: v })} />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-300">Chatham House</span>
+                      <Switch checked={form.chathamHouse} onCheckedChange={(v) => setForm({ ...form, chathamHouse: v })} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="r-series">{t("series_key")}</Label>
-                    <Input id="r-series" value={form.seriesKey}
-                      onChange={(e) => setForm({ ...form, seriesKey: e.target.value })} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="r-proof">{t("require_role_proof")}</Label>
-                    <Switch id="r-proof" checked={form.requiresRoleProof}
-                      onCheckedChange={(v) => setForm({ ...form, requiresRoleProof: v })} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="r-chatham">{t("chatham")}</Label>
-                    <Switch id="r-chatham" checked={form.chathamHouse}
-                      onCheckedChange={(v) => setForm({ ...form, chathamHouse: v })} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="r-review">{t("next_step_review")}</Label>
-                    <Switch id="r-review" checked={form.nextStepReview}
-                      onCheckedChange={(v) => setForm({ ...form, nextStepReview: v })} />
-                  </div>
-                </div>
-              </details>
+                </details>
 
-              <Button data-testid="button-create-room" className="w-full" onClick={create} disabled={creating || !form.title.trim()}>
-                {t("create_room")}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      } />
+                <Button className="w-full" onClick={create} disabled={creating || !form.title.trim()}>
+                  {creating ? "Creating…" : t("create_room")}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {rooms.isLoading ? (
-        <p className="text-sm text-muted-foreground" role="status">{t("loading")}</p>
-      ) : (rooms.data ?? []).length === 0 ? (
-        <p className="text-sm text-muted-foreground border-t border-border pt-5" data-testid="text-no-rooms">{t("rooms_empty")}</p>
-      ) : (
-        <ul className="divide-line border-y border-border" data-testid="list-rooms">
-          {(rooms.data ?? []).map((r) => (
-            <li key={r.id}>
-              <button
-                type="button"
-                data-testid={`card-room-${r.code}`}
-                onClick={() => navigate(`/facilitate/room/${r.id}`)}
-                className="group w-[calc(100%+1rem)] flex items-center gap-4 py-3.5 text-start rounded-md -mx-2 px-2 hover:bg-foreground/[0.03] transition-colors"
-              >
-                <span className="min-w-0 flex-1">
-                  <span dir="auto" className="user-text block font-medium truncate">{r.title}</span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">
-                    <span className="mono-data">{r.code}</span>
-                    {r.tier ? ` · ${t(`tier_${r.tier}`)}` : ""} · {r.anonymityMode === "open" ? t("anonymity_open") : t("anonymity_anon")}
-                    {r.sessionAt ? ` · ${t("scheduled_for")} ${new Date(r.sessionAt).toLocaleString(lang, { dateStyle: "medium", timeStyle: "short" })}` : ""}
+        {rooms.isLoading ? (
+          <p className="text-sm text-zinc-500 font-mono">Loading rooms…</p>
+        ) : (rooms.data ?? []).length === 0 ? (
+          <div className="bento-panel p-8 text-center">
+            <p className="text-sm text-zinc-400">No rooms yet. Create one to begin.</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
+            {(rooms.data ?? []).map((r) => (
+              <li key={r.id} className="py-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/facilitate/room/${r.id}`)}
+                  className="group w-full flex items-center gap-4 text-left hover:bg-white/[0.02] px-1 -mx-1 transition-colors"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-white truncate">{r.title}</span>
+                    <span className="block text-xs text-zinc-500 mt-0.5 font-mono">
+                      {r.code} · {r.tier || "standard"} · {r.anonymityMode === "open" ? "open" : "anonymous"}
+                    </span>
                   </span>
-                </span>
-                <span className={`chip shrink-0 ${r.status === "live" ? "chip-live" : r.status === "sealed" ? "chip-seal" : ""}`}>{t(r.status)}</span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground rtl:rotate-180" aria-hidden />
-              </button>
-              {r.sessionAt && r.status !== "sealed" && (
-                <button type="button" className="link-quiet text-xs -mt-1.5 mb-3 block" data-testid={`button-ics-${r.code}`}
-                  onClick={async () => {
-                    const res = await fetch(apiUrl(`/api/facilitator/rooms/${r.id}/calendar.ics`), {
-                      headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
-                    });
-                    if (!res.ok) { toast({ title: t("error_generic"), variant: "destructive" }); return; }
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url; a.download = `diavanish-${r.code}.ics`; a.click();
-                    URL.revokeObjectURL(url);
-                  }}>
-                  {t("add_to_calendar")}
+                  <span className="text-xs font-mono text-zinc-400 shrink-0">{r.status}</span>
+                  <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-300" />
                 </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="mt-14 pt-8 border-t border-border max-w-xl">
-        <PasskeyManager />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-12 pt-8 border-t border-white/[0.06] max-w-md">
+          <PasskeyManager />
+        </div>
       </div>
     </Shell>
   );
