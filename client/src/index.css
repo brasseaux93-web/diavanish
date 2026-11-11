@@ -1,1 +1,47 @@
-PLACEHOLDER_WILL_REPLACE
+/* Fonts are bundled with the app: no third-party font host learns who opened a room. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-500.css";
+@import "@fontsource/ibm-plex-sans-arabic/arabic-600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Charcoal base, warm ivory, restrained jade/brass. Masterclass contrast pass applied. */
+
+:root {
+  --background: 220 12% 7%;
+  --foreground: 40 20% 88%;
+  --parchment: #F5F0E6;
+  --muted-foreground: 40 12% 72%;
+  --primary: 160 25% 48%;
+  --seal: 38 35% 55%;
+  --card: 220 14% 11%;
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Geist Variable", system-ui, sans-serif;
+  line-height: 1.55;
+}
+
+.chip {
+  min-height: 1.625rem;
+  padding: 0 0.625rem;
+  letter-spacing: 0.01em;
+}
+.room-meta { gap: 0.5rem 1.25rem; line-height: 1.6; }
+.section-title { margin-bottom: 0.5rem; letter-spacing: -0.015em; }
+
+@keyframes confirm-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.confirm-mark { animation: confirm-in 280ms var(--ease-calm) both; }
+@media (prefers-reduced-motion: reduce) {
+  .confirm-mark { animation: none; }
+}
