@@ -42,7 +42,7 @@ export function SimpleRoomShell({
       <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] gap-8 lg:gap-10 min-h-0">
         <main className="min-w-0">{conversation}</main>
 
-        <aside className="min-w-0">
+        <aside className="min-w-0 side-panel">
           <button
             type="button"
             onClick={() => setLedgerOpen((v) => !v)}
