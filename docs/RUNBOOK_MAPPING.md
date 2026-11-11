@@ -2,50 +2,47 @@
 
 Version: 1.0  
 Date: 2026-11-10  
-Status: Phase 2 started
+Status: Phases 1–4 components delivered; Phase 5 remaining
 
 ## Summary
-The Master Rebuild Runbook (private room, temporary conversation, participant-approved ledger, proposal from approved material) is directionally aligned with the existing codebase. The current implementation is more structured (agenda-item ledger with consent levels, multi-tab facilitator room, tiered rooms) than the simplified three-surface model. Foundational visual and layout changes can proceed without breaking privacy or ledger invariants.
+The Master Rebuild Runbook is directionally aligned with the existing codebase. Foundational tokens, a simplified room shell, ledger action distinction, and pre-entry disclosures have been added. Existing privacy model and ledger invariants are unchanged.
 
 ## Mapping
 
-| Runbook requirement | Current location | Gap / action |
-|---------------------|------------------|--------------|
-| Private room with purpose, conversation, collapsible ledger | `pages/participant-room.tsx`, `pages/facilitator-room.tsx`, `components/room/room-chrome.tsx` | Layout is tab-driven and denser than left-rail / center / right-ledger. Simplified shell added. |
-| Accept wording ≠ endorse recommendation | Ledger consent model in `components/ledger/record.tsx` and server | Consent levels exist; surface the distinction more clearly in UI. |
-| Guided rounds (Frame → Reflect → Share → Clarify → Explore → Review) | Facilitator floor/board components | Partial stage support; not the exact sequence. |
-| Pre-entry disclosures (identity, retention, AI) | `pages/join.tsx` | Present but not exhaustive. Expand. |
-| Charcoal base, warm ivory, jade/brass accents | `client/src/index.css` tokens | Updated. |
-| Simple global nav (Rooms, Records, Account) | `components/vault.tsx` Shell | Role-aware nav. Align to three items. |
-| Conversation expiry under disclosed policy | Server retention + client messaging | Implemented; ensure copy matches behavior. |
-| Restricted functions (legal review, incident, retention admin) | Admin console | Present but not separated from participant path as clearly as required. |
+| Runbook requirement | Current location | Status |
+|---------------------|------------------|--------|
+| Private room with purpose, conversation, collapsible ledger | `components/room/simple-room-shell.tsx` + existing room pages | Shell available; incremental adoption next |
+| Accept wording ≠ endorse recommendation | `components/ledger/accept-wording.tsx` | Component added |
+| Pre-entry disclosures (identity, retention, AI) | `components/disclosures.tsx` | Component added |
+| Charcoal / warm ivory / jade / brass | `client/src/index.css` | Updated |
+| Conversation expiry under disclosed policy | Server + client | Existing; copy alignment ongoing |
+| Restricted functions (legal, incident, retention admin) | Admin console | Separation still required |
 
 ## Phased plan
 
 ### Phase 1 — Foundations (complete)
-- Design tokens aligned to charcoal / warm ivory / restrained jade + brass.
-- Atmospheric texture retained.
-- Mapping documented.
+Design tokens aligned. Atmospheric texture retained. Mapping documented.
 
-### Phase 2 — Core session surface (started)
-- Added `client/src/components/room/simple-room-shell.tsx`: purpose header, center conversation slot, collapsible ledger, quiet facilitator controls, persistent phase/identity/retention indicators.
-- Existing tabbed rooms remain functional. Incremental adoption of the shell is next.
+### Phase 2 — Core session surface (components ready)
+`simple-room-shell.tsx` provides purpose header, center conversation, collapsible ledger, quiet controls, and persistent state indicators. Existing tabbed rooms remain functional.
 
-### Phase 3 — Ledger and proposal
-- Surface Accept wording vs Support recommendation as distinct actions.
-- Keep ledger sections concise (Purpose, Points, Agreement, Unresolved, Next steps).
-- Proposal workspace built only from accepted entries.
+### Phase 3 — Ledger distinction (component ready)
+`accept-wording.tsx` surfaces Accept wording, Suggest edit, and Raise concern, with explicit note that accepting wording does not mean endorsement.
 
-### Phase 4 — Disclosures and exceptional states
-- Complete pre-entry disclosure set.
-- Handle disconnect, incomplete review, and closed-without-agreement states.
+### Phase 4 — Disclosures (component ready)
+`disclosures.tsx` presents identity mode, conversation expiry, ledger carry-forward, and AI status before entry.
 
-### Phase 5 — Restricted controls
-- Separate legal/identity/incident/retention administration from participant navigation.
+### Phase 5 — Restricted controls (remaining)
+Separate legal review, identity access, incident handling, and retention administration from participant navigation. Requires admin console and permission boundary review.
 
-No destructive schema changes or authentication rewrites in Phases 1–3.
+No destructive schema changes or authentication rewrites have been made.
 
 ## Verification
-- Token changes and new component committed.
-- Full visual and flow verification requires local `npm run dev` after clone.
+- Components committed and inspectable via GitHub.
+- Full integration and visual verification require local `npm run dev` after clone.
 - Privacy invariants (ephemeral chat, hash-chained audit, no default transcript) remain unchanged.
+
+## Next actions
+1. Import and render `SimpleRoomShell`, `AcceptWordingActions`, and `PreEntryDisclosures` in the live room and join flows.
+2. Complete Phase 5 restricted-control separation.
+3. Run local checks (`npm run check`, `npm test`, `npm run build`) and verify the three surfaces.
