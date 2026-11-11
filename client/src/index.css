@@ -1,4 +1,4 @@
-/* Restored stylesheet with open chat styles applied. Full content restored from prior version + import. */
+/* Restored stylesheet with open chat and side panel styles. */
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 @import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
@@ -10,6 +10,7 @@
 @tailwind utilities;
 
 @import "./styles/chat-open.css";
+@import "./styles/side-open.css";
 
 :root {
   --background: 220 14% 6%;
@@ -41,3 +42,9 @@ body {
 .chat-group.mine .bubble { background: hsl(var(--primary) / 0.12); align-self: flex-end; }
 .chat-composer { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--line); display: flex; gap: 0.5rem; align-items: flex-end; }
 .chat-composer textarea { flex: 1; min-height: 2.75rem; padding: 0.625rem 0.875rem; border-radius: 0.5rem; background: var(--surface-sunk); border: 1px solid var(--line); resize: none; }
+
+.side-panel, .ledger-surface, aside { padding: 1.25rem; }
+.side-panel > * + *, .ledger-surface > * + * { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.side-title { font-size: 0.8125rem; font-weight: 500; color: hsl(var(--muted-foreground)); margin-bottom: 0.75rem; letter-spacing: 0.01em; }
+.ledger-point, .panel-row { padding: 0.875rem 1rem; border-radius: 0.5rem; background: hsl(var(--card)); margin-bottom: 0.75rem; }
+.room-meta { gap: 0.75rem 1.5rem; line-height: 1.6; }
