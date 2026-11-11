@@ -1,0 +1,31 @@
+/* Open side panels and ledger surfaces — import into index.css. */
+
+.side-panel,
+.ledger-surface,
+aside {
+  padding: 1.25rem;
+}
+.side-panel > * + *,
+.ledger-surface > * + * {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.side-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.01em;
+}
+.ledger-point,
+.panel-row {
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  background: hsl(var(--card));
+  margin-bottom: 0.75rem;
+}
+.room-meta {
+  gap: 0.75rem 1.5rem;
+  line-height: 1.6;
+}
