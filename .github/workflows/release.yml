@@ -1,0 +1,36 @@
+name: Release hashes
+
+# On a version tag (v1.2.3), build with the same Node major as the Docker image (24 LTS)
+# and publish the manifest, so anyone can check a server against it.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  hashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: |
+          cd dist/public
+          jq -r '.files | to_entries[] | "\(.value)  \(.key)"' build-manifest.json > ../../SHA256SUMS
+          cd ../..
+          echo "root $(jq -r .root dist/public/build-manifest.json)" >> SHA256SUMS
+      - name: Publish manifest on the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ROOT=$(jq -r .root dist/public/build-manifest.json)
+          gh release create "$GITHUB_REF_NAME" dist/public/build-manifest.json SHA256SUMS \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Browser build root hash: \`$ROOT\`. Verify a server with \`npm run build && npm run verify -- https://your-host\`." \
+            || gh release upload "$GITHUB_REF_NAME" dist/public/build-manifest.json SHA256SUMS --clobber

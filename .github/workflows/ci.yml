@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+    branches: [main, next]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:prod
+
+  reproducible:
+    # Two clean builds from the same commit must produce identical browser files.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build && cp dist/public/build-manifest.json /tmp/first.json
+      - run: rm -rf dist node_modules && npm ci && npm run build
+      - run: diff /tmp/first.json dist/public/build-manifest.json
+      - run: echo "Build root hash $(jq -r .root dist/public/build-manifest.json)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Generate CycloneDX SBOM (production dependencies)
+        run: npm sbom --omit dev --sbom-format cyclonedx > sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+      - run: |
+          echo "SBOM component count $(jq '.components | length' sbom.cdx.json)" >> "$GITHUB_STEP_SUMMARY"
+
+  image:
+    # Build the pinned image and boot it the way operators should: read-only
+    # root, tmpfs /tmp, all capabilities dropped, no-new-privileges.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t aperture:ci .
+      - name: Fresh volume migrates, serves, and passes HEALTHCHECK
+        run: |
+          set -euo pipefail
+          docker run -d --name aperture-ci \
+            --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges:true \
+            -p 127.0.0.1:5000:5000 \
+            -e APERTURE_SECRET=ci-not-a-real-secret \
+            -e APERTURE_ADMIN_EMAIL=ci@example.org \
+            aperture:ci
+          cleanup() { docker logs aperture-ci || true; docker rm -f aperture-ci >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          ok=
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:5000/api/public/health 2>/dev/null | grep -q '"ok":true'; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          test -n "$ok" || { echo "health never became ok"; exit 1; }
+          health_of() { docker inspect "$1" | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["State"]["Health"]["Status"])'; }
+          test "$(health_of aperture-ci)" = "healthy" || sleep 25
+          status=$(health_of aperture-ci)
+          echo "docker health: $status"
+          test "$status" = "healthy"
+      - name: Existing push-created database is journaled, not rebuilt
+        env:
+          EXISTING_DB_DIR: ${{ runner.temp }}/ap-existing
+        run: |
+          set -euo pipefail
+          mkdir -p "$EXISTING_DB_DIR"
+          python3 - <<'PY'
+          import os, pathlib, sqlite3
+          db_path = os.path.join(os.environ["EXISTING_DB_DIR"], "aperture.db")
+          conn = sqlite3.connect(db_path)
+          for name in ("0000_baseline.sql", "0001_ledger_v2.sql", "0002_purged_at.sql"):
+              sql = pathlib.Path("migrations", name).read_text()
+              for stmt in sql.split("--> statement-breakpoint"):
+                  if stmt.strip():
+                      conn.execute(stmt)
+          conn.execute("INSERT INTO admins (email, created_at) VALUES (?, ?)", ("kept@example.org", 1))
+          conn.commit()
+          assert conn.execute("SELECT name FROM sqlite_master WHERE name='__drizzle_migrations'").fetchall() == []
+          conn.close()
+          print("wrote", db_path)
+          PY
+          chmod a+rwx "$EXISTING_DB_DIR" "$EXISTING_DB_DIR/aperture.db"
+          docker run --rm             --read-only --tmpfs /tmp             --cap-drop ALL --security-opt no-new-privileges:true             -v "$EXISTING_DB_DIR:/data"             -e APERTURE_DB=/data/aperture.db             -e APERTURE_SECRET=ci-not-a-real-secret             -e APERTURE_ADMIN_EMAIL=ci@example.org             aperture:ci node dist/migrate.cjs
+          python3 - <<'PY'
+          import os, sqlite3
+          db_path = os.path.join(os.environ["EXISTING_DB_DIR"], "aperture.db")
+          conn = sqlite3.connect(db_path)
+          emails = [r[0] for r in conn.execute("SELECT email FROM admins")]
+          assert "kept@example.org" in emails, emails
+          count = conn.execute("SELECT count(*) FROM __drizzle_migrations").fetchone()[0]
+          print("journal rows:", count)
+          assert count >= 3, count
+          PY

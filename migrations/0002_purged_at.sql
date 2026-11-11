@@ -1,0 +1,1 @@
+ALTER TABLE `rooms` ADD `purged_at` integer;
