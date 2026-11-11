@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Check, Clock, KeyRound, Play } from "lucide-react";
+import { ArrowRight, Check, Clock, ExternalLink, KeyRound, Play } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { Shell, StatusDot, useStartDemo } from "@/components/vault";
+import { RecordBody, SupportLine } from "@/components/ledger/record";
 import type { LegalId } from "@/lib/legal";
 
 function openLegal(id: LegalId) {
@@ -12,7 +13,7 @@ function openLegal(id: LegalId) {
   window.dispatchEvent(new Event("popstate"));
 }
 
-/** 0 = discuss, 1 = entries proposed and awaiting approval, 2 = approved and a draft proposal exists. */
+/** 0 = discuss, 1 = entries proposed and awaiting approval, 2 = approved and proposal brief available. */
 type Stage = 0 | 1 | 2;
 
 /**
@@ -24,6 +25,7 @@ type Stage = 0 | 1 | 2;
  */
 function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
   const { t } = useI18n();
+  const [, navigate] = useLocation();
   const [stage, setStage] = useState<Stage>(2);
   const approved = stage === 2;
 
@@ -33,6 +35,17 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
     { id: 2, label: t("home_demo_stage_develop") },
   ];
   const srText = [t("home_demo_sr_discuss"), t("home_demo_sr_approve"), t("home_demo_sr_develop")][stage];
+  const agreementPayload = {
+    action: t("home_demo_principle"),
+    owner: t("home_demo_owner"),
+    deadline: t("home_demo_deadline"),
+    measure: t("home_demo_measure"),
+    resources: "",
+  };
+  const questionPayload = {
+    question: t("home_demo_question"),
+    research: "",
+  };
 
   return (
     <section aria-labelledby="home-demo-h" className="metal min-w-0 overflow-hidden" data-testid="hero-schematic">
@@ -44,9 +57,14 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
         <span className="text-xs text-muted-foreground" data-testid="text-demo-aliases">{t("home_demo_aliases")}</span>
       </div>
 
-      {/* Stage selector: clean tabs on a hairline */}
+      {/* Stage selector: clean tabs on a hairline; wraps cleanly on narrow phones so no label clips */}
       <div className="px-4 pt-2.5 flex items-center justify-between gap-2 border-b border-border/60">
-        <div role="group" aria-label={t("home_demo_stage_label")} className="segmented segmented-box" data-testid="demo-stages">
+        <div
+          role="group"
+          aria-label={t("home_demo_stage_label")}
+          className="segmented segmented-box max-sm:w-full max-sm:flex-wrap max-sm:gap-1 max-sm:mb-2.5 max-sm:[&>button]:flex-1 max-sm:[&>button]:min-w-[5.5rem] max-sm:[&>button]:whitespace-normal max-sm:[&>button]:text-center max-sm:[&>button]:justify-center max-sm:[&>button]:leading-tight max-sm:[&>button]:py-1.5 max-sm:[&>button]:px-2"
+          data-testid="demo-stages"
+        >
           {stages.map((s) => {
             const locked = s.id === 2 && !approved;
             return (
@@ -77,8 +95,8 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
               : "bg-[var(--surface-sunk)]/80 border border-border/60"
           }`}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span className="text-xs font-semibold text-[hsl(var(--seal))]">{t("home_demo_fac")}</span>
               <span className="text-xs text-muted-foreground">{t("home_demo_label_dialogue")}</span>
             </div>
@@ -86,14 +104,14 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
           </div>
           <p className="mt-1 text-sm leading-snug text-foreground text-pretty font-normal">{t("home_demo_prompt")}</p>
 
-          <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+          <div className="mt-2 pt-2 border-t border-border/40 grid sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
             <div className="min-w-0">
               <span className="font-medium text-foreground/85 block">{t("home_demo_da")}</span>
-              <p className="truncate text-pretty text-foreground/70">{t("home_demo_a")}</p>
+              <p className="text-pretty leading-relaxed text-foreground/75">{t("home_demo_a")}</p>
             </div>
             <div className="min-w-0">
               <span className="font-medium text-foreground/85 block">{t("home_demo_db")}</span>
-              <p className="truncate text-pretty text-foreground/70">{t("home_demo_b")}</p>
+              <p className="text-pretty leading-relaxed text-foreground/75">{t("home_demo_b")}</p>
             </div>
           </div>
         </div>
@@ -107,20 +125,21 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
           }`}
           data-testid="demo-ledger"
         >
-          <div className="flex items-baseline justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 min-w-0">
               <span className="text-[0.6875rem] tracking-wider uppercase font-semibold text-muted-foreground">
                 {t("home_demo_ledger_label")}
               </span>
-              <span className="text-muted-foreground/40 font-mono text-xs">/</span>
+              <span className="text-muted-foreground/40 font-mono text-xs" aria-hidden>/</span>
               <h3 className="font-display font-semibold text-base sm:text-[1.0625rem] text-ivory tracking-tight">
                 {t("home_demo_ledger_title")}
               </h3>
             </div>
+            <span className="chip text-[0.6875rem] min-h-[1.25rem]">{t("th_consensus")}</span>
           </div>
 
           <div key={String(approved)} className="page-enter space-y-2.5">
-            {/* Approved principle: dominant focus with restrained teal accent */}
+            {/* Approved agreement: real structured record component + levels-only consent (<7 seats) */}
             <div
               className={`rounded-md p-3 sm:p-3.5 transition-colors ${
                 approved
@@ -128,13 +147,13 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
                   : "bg-[var(--surface-sunk)] border border-border/80"
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">{t("home_demo_principle_label")}</span>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs font-medium text-muted-foreground">{t("rk1_agreement")}</span>
                 <span data-testid="demo-principle-status">
                   {approved ? (
                     <span className="chip chip-ok text-xs font-medium">
                       <Check className="h-3 w-3" aria-hidden />
-                      <span>{t("home_demo_approved")}</span>
+                      <span>{t("approved")}</span>
                     </span>
                   ) : (
                     <span className="chip chip-warn text-xs font-medium">
@@ -144,22 +163,25 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
                   )}
                 </span>
               </div>
-              <p className="mt-1.5 text-sm sm:text-base font-medium leading-snug text-ivory text-pretty">
-                {t("home_demo_principle")}
-              </p>
+              <RecordBody kind="agreement" payload={agreementPayload} text="" />
+              {approved && (
+                <div className="mt-2.5 pt-2.5 border-t border-border/50">
+                  <SupportLine support={{ level: "full", withReservations: false, withObjection: false, objections: [] }} />
+                </div>
+              )}
             </div>
 
             {/* Unresolved question: clearly distinguished with dashed border */}
             <div className="rounded-md border border-dashed border-[var(--line-strong)] bg-transparent p-3" data-testid="demo-question">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-xs font-medium text-muted-foreground">{t("home_demo_question_label")}</span>
                 <span className="chip text-[0.6875rem] min-h-[1.375rem]">
-                  {approved ? t("home_demo_approved") : t("home_demo_pending")}
+                  {approved ? t("rec_on_record") : t("home_demo_pending")}
                 </span>
               </div>
-              <p className="mt-1 text-sm leading-snug text-foreground/90 text-pretty">{t("home_demo_question")}</p>
+              <RecordBody kind="question" payload={questionPayload} text="" compact />
               {approved && (
-                <p className="mt-1 text-[0.6875rem] text-muted-foreground text-pretty">
+                <p className="mt-1.5 text-xs text-muted-foreground text-pretty">
                   {t("home_demo_unresolved_note")}
                 </p>
               )}
@@ -177,12 +199,12 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
                 <Check className="h-3.5 w-3.5" aria-hidden />
                 <span>{t("home_demo_approve_btn")}</span>
               </button>
-              <p className="text-xs text-muted-foreground max-w-[34ch] text-pretty">{t("home_demo_approve_note")}</p>
+              <p className="text-xs text-muted-foreground max-w-[36ch] text-pretty">{t("home_demo_approve_note")}</p>
             </div>
           )}
         </div>
 
-        {/* 3. Deliberate directional connector: links approved ledger directly to proposal */}
+        {/* 3. Deliberate directional connector: links approved ledger directly to brief */}
         <div className="flex items-center gap-2.5 ps-4 py-0.5" data-testid="demo-link-cue">
           <div className="flex items-center text-[hsl(var(--primary))]">
             <span
@@ -203,7 +225,7 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
           </span>
         </div>
 
-        {/* 4. Compact Draft Proposal Preview */}
+        {/* 4. Proposal brief preview (typeset strictly from sealed approved ledger) */}
         <div
           className={`rounded-lg p-3.5 sm:p-4 transition-colors duration-200 motion-reduce:transition-none ${
             approved
@@ -212,12 +234,12 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
           }`}
           data-testid="demo-proposal"
         >
-          <div className="flex items-baseline justify-between gap-x-3 gap-y-1">
-            <h3 className="font-display font-medium text-sm sm:text-base text-foreground flex items-center gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h3 className="font-display font-medium text-sm sm:text-base text-foreground flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <span className="text-[0.6875rem] uppercase tracking-wider text-muted-foreground font-semibold">
                 {t("home_demo_doc_label")}
               </span>
-              <span className="text-muted-foreground/40 font-mono text-xs">/</span>
+              <span className="text-muted-foreground/40 font-mono text-xs" aria-hidden>/</span>
               <span>{t("home_demo_doc_title")}</span>
             </h3>
             <span className="text-xs text-muted-foreground">{t("home_demo_doc_status")}</span>
@@ -225,16 +247,41 @@ function HeroDemo({ demo }: { demo: ReturnType<typeof useStartDemo> }) {
 
           <div key={String(approved)} className="page-enter mt-2">
             {approved ? (
-              <div className="divide-y divide-border/60 border-t border-border/60 text-xs">
-                <div className="py-2 grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3">
-                  <span className="text-muted-foreground font-medium">{t("home_demo_sec_conditions")}</span>
-                  <span className="text-foreground text-pretty">{t("home_demo_sec_conditions_p")}</span>
+              <>
+                <div className="divide-y divide-border/60 border-t border-border/60 text-xs">
+                  <div className="py-2 grid sm:grid-cols-[7.5rem_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+                    <span className="text-muted-foreground font-medium">{t("home_demo_sec_conditions")}</span>
+                    <span className="text-foreground text-pretty">{t("home_demo_sec_conditions_p")}</span>
+                  </div>
+                  <div className="py-2 grid sm:grid-cols-[7.5rem_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+                    <span className="text-muted-foreground font-medium">{t("home_demo_sec_resp")}</span>
+                    <span className="text-foreground/90 text-pretty">{t("home_demo_sec_resp_p")}</span>
+                  </div>
+                  <div className="py-2 grid sm:grid-cols-[7.5rem_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+                    <span className="text-muted-foreground font-medium">{t("home_demo_sec_open")}</span>
+                    <span className="text-foreground/85 text-pretty">{t("home_demo_sec_open_p")}</span>
+                  </div>
                 </div>
-                <div className="py-2 grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3">
-                  <span className="text-muted-foreground font-medium">{t("home_demo_sec_open")}</span>
-                  <span className="text-foreground/90 text-pretty">{t("home_demo_sec_open_p")}</span>
+                <div className="mt-2 pt-2.5 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="text-muted-foreground">{t("home_demo_brief_note")}</span>
+                  <button
+                    type="button"
+                    data-testid="button-demo-brief-link"
+                    onClick={() => (demo.available ? demo.start("verifier") : navigate("/verify"))}
+                    disabled={!!demo.busy}
+                    className="link-quiet text-xs"
+                  >
+                    <span>
+                      {demo.busy === "verifier"
+                        ? t("demo_starting")
+                        : demo.available
+                          ? t("home_demo_sample_link")
+                          : t("verify_nav")}
+                    </span>
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </button>
                 </div>
-              </div>
+              </>
             ) : (
               <p className="py-2 border-t border-dashed border-[var(--line-strong)] text-xs text-muted-foreground" data-testid="demo-proposal-wait">
                 {t("home_demo_doc_wait")}
@@ -327,7 +374,33 @@ export default function Entry() {
         <HeroDemo demo={demo} />
       </section>
 
-      {/* 2. TRUST: what carries forward, and where it stops */}
+      {/* 2. WORKFLOW: three stages from temporary conversation to sealed brief */}
+      <section
+        aria-labelledby="workflow-h"
+        data-testid="section-workflow"
+        className="mt-12 sm:mt-16 pt-8 border-t border-border"
+      >
+        <h2 id="workflow-h" className="font-display font-semibold text-lg sm:text-xl tracking-[-0.02em] text-foreground">
+          {t("wf_heading")}
+        </h2>
+        <ol className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          {([
+            ["01", "wf_1_h", "wf_1_p"],
+            ["02", "wf_2_h", "wf_2_p"],
+            ["03", "wf_3_h", "wf_3_p"],
+          ] as const).map(([num, h, p]) => (
+            <li key={h} className="space-y-1 min-w-0">
+              <div className="flex items-baseline gap-2.5">
+                <span className="mono-data text-xs text-muted-foreground" aria-hidden>{num}</span>
+                <span className="text-sm font-medium text-foreground">{t(h)}</span>
+              </div>
+              <p className="text-sm text-muted-foreground text-pretty leading-relaxed">{t(p)}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 3. TRUST: what carries forward, and where it stops */}
       <section
         aria-labelledby="trust-boundary-h"
         data-testid="section-privacy-limits"
@@ -371,7 +444,7 @@ export default function Entry() {
         </div>
       </section>
 
-      {/* 3. CLOSING: one invitation, the same two actions */}
+      {/* 4. CLOSING: one invitation, the same two actions */}
       <section className="mt-12 sm:mt-16 pt-8 border-t border-border pb-2 flex flex-wrap items-center justify-between gap-6">
         <h2 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-foreground text-pretty">
           {t("entry_closing_line")}
