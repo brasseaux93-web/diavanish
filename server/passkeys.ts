@@ -34,8 +34,8 @@ function settings() {
 export function relyingParty(req: Request) {
   const hostHeader = String(req.get("x-forwarded-host") || req.get("host") || "localhost");
   const host = hostHeader.split(":")[0] || "localhost";
-  const rpID = process.env.APERTURE_RP_ID || host;
-  const origin = process.env.APERTURE_ORIGIN || `${req.protocol}://${hostHeader}`;
+  const rpID = process.env.DIAVANISH_RP_ID || process.env.APERTURE_RP_ID || host;
+  const origin = process.env.DIAVANISH_ORIGIN || process.env.APERTURE_ORIGIN || `${req.protocol}://${hostHeader}`;
   const rpName = settings().orgName || "Diavanish";
   return { rpID, origin, rpName };
 }

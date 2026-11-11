@@ -15,7 +15,7 @@ import {
 } from "@shared/ledger";
 import { decide, type Decision } from "@shared/tiers";
 
-const sqlite = new Database(process.env.APERTURE_DB || "data.db");
+const sqlite = new Database(process.env.DIAVANISH_DB || process.env.APERTURE_DB || "data.db");
 sqlite.pragma("journal_mode = WAL");
 
 export const db = drizzle(sqlite);
@@ -157,6 +157,14 @@ export function chatWipe(roomId: number) {
   roomCrypto.delete(roomId);
 }
 
+/** Actively shreds all ephemeral caucus messages from memory when merging back to floor */
+export function chatWipeCaucus(roomId: number, channel?: string) {
+  const list = chatRooms.get(roomId);
+  if (!list) return;
+  const filtered = list.filter((m) => channel ? m.channel !== channel : !m.channel.startsWith("caucus:"));
+  chatRooms.set(roomId, filtered);
+}
+
 const B64 = /^[A-Za-z0-9+/]+={0,2}$/;
 export function isB64(s: unknown, max: number): s is string {
   return typeof s === "string" && s.length > 0 && s.length <= max && B64.test(s);
@@ -235,7 +243,7 @@ export function redactCheck(text: string): RedactionFlag[] {
 
 export function seed() {
   // Self-hosters name their first administrator; sign-in codes go to this address.
-  const ownerEmail = process.env.APERTURE_ADMIN_EMAIL?.trim().toLowerCase();
+  const ownerEmail = (process.env.DIAVANISH_ADMIN_EMAIL || process.env.APERTURE_ADMIN_EMAIL)?.trim().toLowerCase();
   if (ownerEmail && !db.select().from(admins).where(eq(admins.email, ownerEmail)).get()) {
     db.insert(admins).values({ email: ownerEmail, createdAt: now() }).run();
   }

@@ -10,7 +10,7 @@ export const BOOTSTRAP_ADMIN_EMAIL = "admin@diavanish.org";
  */
 export function bootstrapAdminHintAllowed(): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-  if (process.env.APERTURE_DEV_CODES === "1") return true;
+  if ((process.env.DIAVANISH_DEV_CODES || process.env.APERTURE_DEV_CODES) === "1") return true;
   if (demoEnabled()) return true;
   return false;
 }

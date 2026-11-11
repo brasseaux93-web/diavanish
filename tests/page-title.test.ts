@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { pageTitle, titleKeyForPath } from "../client/src/lib/page-title";
 
 const copy: Record<string, string> = {
+  diavanish: "Diavanish",
   aperture: "Diavanish",
   doc_home: "Home",
   doc_admin_signin: "Administrator sign-in",

@@ -8,7 +8,7 @@ const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
    closes. window.name is not used because some browsers carry it across
    navigations to other sites. Where sessionStorage is blocked (sandboxed
    iframes), state stays in memory only and a reload signs the tab out. */
-const STORE_KEY = "aperture";
+const STORE_KEY = "diavanish";
 let sessionToken: string | null = null;
 let recoveryKey: string | null = null;
 let demoMode = false;
@@ -31,7 +31,7 @@ function restore(raw: string | null) {
 }
 
 try {
-  restore(store()?.getItem(STORE_KEY) ?? null);
+  restore(store()?.getItem(STORE_KEY) ?? store()?.getItem("aperture") ?? null);
 } catch {
   /* unreadable state: start signed out */
 }
@@ -119,7 +119,10 @@ async function throwIfResNotOk(res: Response) {
 function authHeaders(data?: unknown): Record<string, string> {
   const h: Record<string, string> = {};
   if (data) h["Content-Type"] = "application/json";
-  if (sessionToken) h["x-aperture-session"] = sessionToken;
+  if (sessionToken) {
+    h["x-diavanish-session"] = sessionToken;
+    h["x-aperture-session"] = sessionToken;
+  }
   return h;
 }
 
@@ -156,7 +159,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const res = await fetch(`${API_BASE}${queryKey.join("/")}`, {
-      headers: sessionToken ? { "x-aperture-session": sessionToken } : {},
+      headers: sessionToken ? { "x-diavanish-session": sessionToken, "x-aperture-session": sessionToken } : {},
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

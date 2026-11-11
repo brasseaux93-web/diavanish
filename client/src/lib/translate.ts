@@ -98,7 +98,7 @@ export function translateIncoming(cacheKey: string, text: string, target: string
 
 /* ── "Translation unavailable" is said once per browser session, not per bubble ── */
 
-const NOTE_KEY = "aperture.translate-note";
+const NOTE_KEY = "diavanish.translate-note";
 let noteShown = (() => {
   try { return sessionStorage.getItem(NOTE_KEY) === "1"; } catch { return false; }
 })();

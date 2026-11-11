@@ -18,9 +18,13 @@ export const DEFAULT_MAIL_FROM = "Diavanish <no-reply@diavanish.org>";
 export type MailMode = "resend" | "webhook" | "dev" | "off";
 
 export function mailMode(): MailMode {
-  if (process.env.RESEND_API_KEY && process.env.APERTURE_MAIL_FROM) return "resend";
-  if (process.env.APERTURE_MAIL_WEBHOOK) return "webhook";
-  if (process.env.APERTURE_DEV_CODES === "1") return "dev";
+  const mailFrom = process.env.DIAVANISH_MAIL_FROM || process.env.APERTURE_MAIL_FROM;
+  const webhook = process.env.DIAVANISH_MAIL_WEBHOOK || process.env.APERTURE_MAIL_WEBHOOK;
+  const devCodes = process.env.DIAVANISH_DEV_CODES || process.env.APERTURE_DEV_CODES;
+
+  if (process.env.RESEND_API_KEY && mailFrom) return "resend";
+  if (webhook) return "webhook";
+  if (devCodes === "1") return "dev";
   return "off";
 }
 
@@ -36,6 +40,10 @@ function body(code: string) {
 export async function sendCode(to: string, code: string): Promise<void> {
   const mode = mailMode();
   const subject = "Your Diavanish sign-in code";
+  const mailFrom = process.env.DIAVANISH_MAIL_FROM || process.env.APERTURE_MAIL_FROM || DEFAULT_MAIL_FROM;
+  const webhook = process.env.DIAVANISH_MAIL_WEBHOOK || process.env.APERTURE_MAIL_WEBHOOK;
+  const webhookSecret = process.env.DIAVANISH_MAIL_WEBHOOK_SECRET || process.env.APERTURE_MAIL_WEBHOOK_SECRET;
+
   if (mode === "resend") {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -43,18 +51,17 @@ export async function sendCode(to: string, code: string): Promise<void> {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: process.env.APERTURE_MAIL_FROM || DEFAULT_MAIL_FROM, to: [to], subject, text: body(code) }),
+      body: JSON.stringify({ from: mailFrom, to: [to], subject, text: body(code) }),
     });
     if (!r.ok) throw new Error(`Mail provider refused the message (${r.status})`);
     return;
   }
   if (mode === "webhook") {
-    const r = await fetch(process.env.APERTURE_MAIL_WEBHOOK!, {
+    const r = await fetch(webhook!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(process.env.APERTURE_MAIL_WEBHOOK_SECRET
-          ? { Authorization: `Bearer ${process.env.APERTURE_MAIL_WEBHOOK_SECRET}` } : {}),
+        ...(webhookSecret ? { Authorization: `Bearer ${webhookSecret}` } : {}),
       },
       body: JSON.stringify({ to, subject, text: body(code) }),
     });

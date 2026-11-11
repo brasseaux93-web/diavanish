@@ -16,8 +16,10 @@ export const DEMO_FAC_EMAIL = "demo.facilitator@diavanish.org";
 
 /** True only when the operator explicitly asked for demos (and, in production, asked twice). */
 export function demoEnabled(env: Env = process.env): boolean {
-  if (env.APERTURE_DEMO !== "1") return false;
-  if (env.NODE_ENV === "production" && env.APERTURE_DEMO_IN_PRODUCTION !== "1") return false;
+  const demo = env.DIAVANISH_DEMO || env.APERTURE_DEMO;
+  const demoProd = env.DIAVANISH_DEMO_IN_PRODUCTION || env.APERTURE_DEMO_IN_PRODUCTION;
+  if (demo !== "1") return false;
+  if (env.NODE_ENV === "production" && demoProd !== "1") return false;
   return true;
 }
 

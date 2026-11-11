@@ -32,7 +32,7 @@ export function SealPanel({
   const exportLedger = async () => {
     try {
       const res = await fetch(apiUrl(`/api/facilitator/rooms/${room.id}/export`), {
-        headers: { "x-aperture-session": getSessionToken() ?? "" },
+        headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
       });
       if (!res.ok) throw new Error(t("error_generic"));
       const blob = await res.blob();
@@ -136,6 +136,10 @@ export function SealPanel({
               <Button variant="secondary" size="sm" data-testid="button-seal-brief-pdf"
                 onClick={() => window.open(apiUrl(`/api/public/ledger/${room.code}/brief.html?lang=${lang}#print`), "_blank")}>
                 {t("brief_pdf")}
+              </Button>
+              <Button variant="secondary" size="sm" data-testid="button-seal-receipt"
+                onClick={() => window.open(apiUrl(`/api/public/ledger/${room.code}/artifact.json`), "_blank")}>
+                Receipt (.json)
               </Button>
             </>
           )}

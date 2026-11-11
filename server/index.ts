@@ -84,9 +84,10 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
-    if (process.env.APERTURE_DEV_CODES === "1") {
+    const devCodes = process.env.DIAVANISH_DEV_CODES || process.env.APERTURE_DEV_CODES;
+    if (devCodes === "1") {
       // Dev codes return sign-in codes in the API response. Never allow that in production.
-      console.error("Refusing to start: APERTURE_DEV_CODES=1 is not allowed when NODE_ENV=production.");
+      console.error("Refusing to start: DEV_CODES=1 is not allowed when NODE_ENV=production.");
       process.exit(1);
     }
     serveStatic(app);

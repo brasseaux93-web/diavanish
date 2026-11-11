@@ -214,7 +214,7 @@ export default function FacilitatorRooms() {
                 <button type="button" className="link-quiet text-xs -mt-1.5 mb-3 block" data-testid={`button-ics-${r.code}`}
                   onClick={async () => {
                     const res = await fetch(apiUrl(`/api/facilitator/rooms/${r.id}/calendar.ics`), {
-                      headers: { "x-aperture-session": getSessionToken() ?? "" },
+                      headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
                     });
                     if (!res.ok) { toast({ title: t("error_generic"), variant: "destructive" }); return; }
                     const blob = await res.blob();

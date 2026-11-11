@@ -75,7 +75,7 @@ function DataRights() {
       <button type="button" className="side-action" data-testid="button-export-data" onClick={async () => {
         try {
           const res = await fetch(apiUrl("/api/participant/export"), {
-            headers: { "x-aperture-session": getSessionToken() ?? "" },
+            headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
           });
           if (!res.ok) throw new Error(t("error_generic"));
           const blob = await res.blob();
@@ -594,7 +594,7 @@ function SummaryCard({ summary }: { summary: PSummary }) {
         )}
         <Button size="sm" variant="ghost" className="ms-auto" data-testid="button-export-summary-p" onClick={async () => {
           const res = await fetch(apiUrl("/api/participant/summary.md"), {
-            headers: { "x-aperture-session": getSessionToken() ?? "" },
+            headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
           });
           if (!res.ok) { toast({ title: t("error_generic"), variant: "destructive" }); return; }
           const blob = await res.blob();
@@ -926,7 +926,15 @@ function ParticipantChat({ active, lock, inCaucus, caucusElsewhere, seatId, labe
   ) : inCaucus ? (
     <p className="text-sm text-[hsl(var(--seal))] px-5 py-2.5 border-b border-border bg-[hsl(var(--seal)/0.05)]">{t("caucus_active")}</p>
   ) : caucusElsewhere ? (
-    <p className="text-sm text-muted-foreground px-5 py-2.5 border-b border-border">{t("caucus_room_note")}</p>
+    <div className="px-5 py-3 border-b border-border bg-[#0e1014] [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.03)] flex items-start gap-3">
+      <span className="w-2 h-2 rounded-full bg-amber-400/90 animate-pulse mt-1 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-neutral-200">{t("caucus_room_note")}</p>
+        <p className="text-[11px] text-neutral-400 leading-relaxed mt-0.5">
+          The facilitator is in an executive sidebar with another seat. The main floor is quiet; no messages or keystrokes are logged. You will be rejoined automatically when the sidebar concludes.
+        </p>
+      </div>
+    </div>
   ) : null;
 
   return (

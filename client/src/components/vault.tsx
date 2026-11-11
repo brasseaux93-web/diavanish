@@ -85,18 +85,31 @@ function LangSwitch() {
   return (
     <DropdownMenu dir={dir}>
       <DropdownMenuTrigger asChild>
-        <button data-testid="lang-switch" aria-label={`Language: ${current.label} ${current.short}`} className="account-chip" lang="en" dir="ltr">
-          <Globe className="h-3.5 w-3.5 opacity-70" aria-hidden />
-          <span className={narrow ? "mono-data text-[0.6875rem]" : undefined}>{narrow ? current.short : current.label}</span>
-          {!narrow && <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden />}
+        <button
+          data-testid="lang-switch"
+          aria-label={`Language: ${current.label} ${current.short}`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-neutral-800 bg-[#14171d] hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors"
+          lang="en"
+          dir="ltr"
+        >
+          <Globe className="h-3.5 w-3.5 text-neutral-400" aria-hidden />
+          <span className={narrow ? "font-mono text-[0.6875rem]" : undefined}>{narrow ? current.short : current.label}</span>
+          <ChevronDown className="h-3 w-3 text-neutral-400 opacity-70" aria-hidden />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground" lang="en" dir="ltr">Language</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-44 border-neutral-800 bg-[#111317] text-neutral-200">
+        <DropdownMenuLabel className="text-xs font-normal text-neutral-400" lang="en" dir="ltr">Language</DropdownMenuLabel>
         {LANGS.map((l) => (
-          <DropdownMenuItem key={l.code} data-testid={`button-lang-${l.code}`} onSelect={() => setLang(l.code)} lang="en" dir="ltr">
+          <DropdownMenuItem
+            key={l.code}
+            data-testid={`button-lang-${l.code}`}
+            onSelect={() => setLang(l.code)}
+            className="hover:bg-neutral-800 text-xs cursor-pointer"
+            lang="en"
+            dir="ltr"
+          >
             <span className="flex-1">{l.label}</span>
-            {l.code === lang && <Check className="h-3.5 w-3.5 opacity-70" aria-hidden />}
+            {l.code === lang && <Check className="h-3.5 w-3.5 text-emerald-400" aria-hidden />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -155,117 +168,181 @@ export function Shell({
 
   return (
     <div className="min-h-dvh flex flex-col relative overflow-x-clip">
-      <button type="button" className="skip-link"
-        onClick={() => document.getElementById("main")?.focus()}>{t("skip_to_content")}</button>
-      <header className="sticky top-0 z-40 shell-bar">
-        <div className={`mx-auto px-3 min-[380px]:px-4 sm:px-6 h-14 flex items-center gap-2 sm:gap-3 min-w-0 ${maxW}`}>
-          <button data-testid="button-home" onClick={() => navigate("/")} className="touch-target flex items-center gap-2 shrink-0" aria-label={t("aperture")}>
-            <DiavanishMark size={22} />
-            <DiavanishWordmark height={17} className="max-[359px]:hidden" />
-          </button>
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#090a0c]/85 border-b border-neutral-800/60 transition-colors">
+        <div className={`mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4 min-w-0 ${maxW}`}>
+          {/* Brand Logo & Wordmark */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              data-testid="button-home"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
+              aria-label={t("diavanish")}
+            >
+              <DiavanishMark size={22} />
+              <DiavanishWordmark height={17} className="max-[359px]:hidden" />
+            </button>
 
-          {trail.length > 0 && (
-            <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 min-w-0 ms-2 text-sm">
-              {trail.map((c, i) => (
-                <span key={i} className="flex items-center gap-2 min-w-0">
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0 rtl:rotate-180" aria-hidden />
-                  <button data-testid={`crumb-${i}`} onClick={() => navigate(c.to!)} className="text-muted-foreground hover:text-foreground transition-colors truncate min-h-6 min-w-6 inline-flex items-center touch-target">{c.label}</button>
-                </span>
-              ))}
-            </nav>
-          )}
+            {trail.length > 0 && (
+              <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 min-w-0 ms-2 text-sm">
+                {trail.map((c, i) => (
+                  <span key={i} className="flex items-center gap-2 min-w-0">
+                    <ChevronRight className="h-3.5 w-3.5 text-neutral-500 shrink-0 rtl:rotate-180" aria-hidden />
+                    <button
+                      data-testid={`crumb-${i}`}
+                      onClick={() => navigate(c.to!)}
+                      className="text-neutral-400 hover:text-neutral-200 transition-colors truncate text-xs"
+                    >
+                      {c.label}
+                    </button>
+                  </span>
+                ))}
+              </nav>
+            )}
+          </div>
 
-          <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
-            <nav className="hidden md:flex items-center gap-1 me-1" aria-label="Primary">
+          {/* Center/Right Nav Links & Actions */}
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+            <nav className="hidden md:flex items-center gap-5 sm:gap-7" aria-label="Primary">
               {nav.map((n) => (
-                <button key={n.id} data-testid={`nav-${n.id}`} onClick={() => navigate(n.to)}
-                  className="nav-link" aria-current={location.startsWith(n.to) ? "page" : undefined}>
+                <button
+                  key={n.id}
+                  data-testid={`nav-${n.id}`}
+                  onClick={() => navigate(n.to)}
+                  className={`text-xs sm:text-sm font-medium transition-colors ${
+                    location.startsWith(n.to)
+                      ? "text-white font-semibold"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                  aria-current={location.startsWith(n.to) ? "page" : undefined}
+                >
                   {n.label}
                 </button>
               ))}
             </nav>
 
-            {me ? (
-              <DropdownMenu dir={dir}>
-                <DropdownMenuTrigger asChild>
-                  <button data-testid="button-account" className="account-chip" aria-label={roleLabel}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-                    <span className="max-w-[12ch] truncate max-[359px]:hidden">{roleLabel}</span>
-                    <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
-                  <DropdownMenuLabel className="font-normal">
-                    <span className="block text-xs text-muted-foreground">{t("signed_in_as")}</span>
-                    <span className="block truncate">{me.name || me.email || me.pseudonym || roleLabel}</span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {nav.map((n) => (
-                    <DropdownMenuItem key={n.id} data-testid={`menu-nav-${n.id}`} onSelect={() => navigate(n.to)}>{n.label}</DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem data-testid="button-signout" onSelect={signOut}>
-                    <LogOut className="h-4 w-4 me-2" aria-hidden />{t("sign_out")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {me ? (
                 <DropdownMenu dir={dir}>
                   <DropdownMenuTrigger asChild>
-                    <button data-testid="button-signin-menu" className="signin-btn shrink-0" aria-label={t("sign_in")} title={t("sign_in")}>
-                      <LogIn className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t("sign_in")}</span>
+                    <button
+                      data-testid="button-account"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-800 bg-[#14171d] hover:bg-neutral-800 text-xs text-neutral-200 transition-colors"
+                      aria-label={roleLabel}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+                      <span className="max-w-[12ch] truncate max-[359px]:hidden">{roleLabel}</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-neutral-400 opacity-70" aria-hidden />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("sign_in_as")}</DropdownMenuLabel>
-                    <DropdownMenuItem data-testid="menu-signin-admin" onSelect={() => navigate("/admin")}><ShieldCheck className="h-4 w-4 me-2" aria-hidden />{t("role_admin")}</DropdownMenuItem>
-                    <DropdownMenuItem data-testid="menu-signin-facilitator" onSelect={() => navigate("/facilitate")}><Users className="h-4 w-4 me-2" aria-hidden />{t("role_facilitator")}</DropdownMenuItem>
-                    <DropdownMenuItem data-testid="menu-signin-participant" onSelect={() => navigate("/join")}><KeyRound className="h-4 w-4 me-2" aria-hidden />{t("role_participant")}</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem data-testid="menu-recover" onSelect={() => navigate("/join/recover")}>{t("recover_seat_nav")}</DropdownMenuItem>
-                    <DropdownMenuItem data-testid="menu-apply" onSelect={() => navigate("/facilitate?mode=apply")}>{t("apply_access")}</DropdownMenuItem>
-                    <DropdownMenuItem data-testid="menu-verify" onSelect={() => navigate("/verify")}>{t("verify_nav")}</DropdownMenuItem>
-                    <DropdownMenuItem className="md:hidden" data-testid="menu-orgs" onSelect={() => navigate("/organisations")}>{t("nav_orgs")}</DropdownMenuItem>
-                    {demo.available && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("run_demo")}</DropdownMenuLabel>
-                        {(["admin", "facilitator", "participant", "verifier"] as const).map((r) => (
-                          <DropdownMenuItem key={r} data-testid={`menu-demo-${r}`} onSelect={() => demo.start(r)}>
-                            <Play className="h-3.5 w-3.5 me-2 seal-brass" aria-hidden />{t(`role_${r}`)}
-                          </DropdownMenuItem>
-                        ))}
-                      </>
-                    )}
+                  <DropdownMenuContent align="end" className="w-60 border-neutral-800 bg-[#111317] text-neutral-200">
+                    <DropdownMenuLabel className="font-normal">
+                      <span className="block text-xs text-neutral-400">{t("signed_in_as")}</span>
+                      <span className="block truncate font-medium text-white">{me.name || me.email || me.pseudonym || roleLabel}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-neutral-800" />
+                    {nav.map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        data-testid={`menu-nav-${n.id}`}
+                        onSelect={() => navigate(n.to)}
+                        className="hover:bg-neutral-800 text-xs cursor-pointer"
+                      >
+                        {n.label}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="bg-neutral-800" />
+                    <DropdownMenuItem
+                      data-testid="button-signout"
+                      onSelect={signOut}
+                      className="hover:bg-neutral-800 text-xs text-red-400 hover:text-red-300 cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4 me-2" aria-hidden />{t("sign_out")}
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              ) : (
+                <>
+                  <DropdownMenu dir={dir}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        data-testid="button-signin-menu"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-neutral-800 bg-[#111317] hover:bg-neutral-800 text-xs font-medium text-neutral-200 transition-colors"
+                        aria-label={t("sign_in")}
+                        title={t("sign_in")}
+                      >
+                        <LogIn className="h-3.5 w-3.5 text-neutral-400" aria-hidden />
+                        <span>{t("sign_in")}</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64 border-neutral-800 bg-[#111317] text-neutral-200">
+                      <DropdownMenuLabel className="text-xs font-normal text-neutral-400">{t("sign_in_as")}</DropdownMenuLabel>
+                      <DropdownMenuItem data-testid="menu-signin-admin" onSelect={() => navigate("/admin")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        <ShieldCheck className="h-4 w-4 me-2 text-neutral-400" aria-hidden />{t("role_admin")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem data-testid="menu-signin-facilitator" onSelect={() => navigate("/facilitate")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        <Users className="h-4 w-4 me-2 text-neutral-400" aria-hidden />{t("role_facilitator")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem data-testid="menu-signin-participant" onSelect={() => navigate("/join")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        <KeyRound className="h-4 w-4 me-2 text-neutral-400" aria-hidden />{t("role_participant")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-neutral-800" />
+                      <DropdownMenuItem data-testid="menu-recover" onSelect={() => navigate("/join/recover")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        {t("recover_seat_nav")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem data-testid="menu-apply" onSelect={() => navigate("/facilitate?mode=apply")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        {t("apply_access")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem data-testid="menu-verify" onSelect={() => navigate("/verify")} className="hover:bg-neutral-800 text-xs cursor-pointer">
+                        {t("verify_nav")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="md:hidden hover:bg-neutral-800 text-xs cursor-pointer" data-testid="menu-orgs" onSelect={() => navigate("/organisations")}>
+                        {t("nav_orgs")}
+                      </DropdownMenuItem>
+                      {demo.available && (
+                        <>
+                          <DropdownMenuSeparator className="bg-neutral-800" />
+                          <DropdownMenuLabel className="text-xs font-normal text-neutral-400">{t("run_demo")}</DropdownMenuLabel>
+                          {(["admin", "facilitator", "participant", "verifier"] as const).map((r) => (
+                            <DropdownMenuItem
+                              key={r}
+                              data-testid={`menu-demo-${r}`}
+                              onSelect={() => demo.start(r)}
+                              className="hover:bg-neutral-800 text-xs cursor-pointer"
+                            >
+                              <Play className="h-3.5 w-3.5 me-2 text-amber-400" aria-hidden />{t(`role_${r}`)}
+                            </DropdownMenuItem>
+                          ))}
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-                {demo.available ? (
-                  <button
-                    type="button"
-                    data-testid="button-header-demo"
-                    onClick={() => demo.start("participant")}
-                    disabled={!!demo.busy}
-                    className="hidden sm:inline-flex signin-btn cta-primary shrink-0"
-                  >
-                    <Play className="h-3.5 w-3.5 fill-current shrink-0" aria-hidden />
-                    <span>{demo.busy === "participant" ? t("demo_starting") : t("entry_cta_demo")}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    data-testid="button-header-apply"
-                    onClick={() => navigate("/facilitate?mode=apply")}
-                    className="hidden sm:inline-flex signin-btn cta-primary shrink-0"
-                  >
-                    <span>{t("header_apply")}</span>
-                  </button>
-                )}
-              </>
-            )}
-            <LangSwitch />
+                  {demo.available ? (
+                    <button
+                      type="button"
+                      data-testid="button-header-demo"
+                      onClick={() => demo.start("participant")}
+                      disabled={!!demo.busy}
+                      className="hidden sm:inline-flex items-center gap-1.5 bg-white text-black hover:bg-neutral-200 font-medium px-3.5 py-1.5 rounded-md text-xs transition-all shadow-sm shrink-0"
+                    >
+                      <Play className="h-3 w-3 fill-current shrink-0" aria-hidden />
+                      <span>{demo.busy === "participant" ? t("demo_starting") : t("entry_cta_demo")}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      data-testid="button-header-apply"
+                      onClick={() => navigate("/facilitate?mode=apply")}
+                      className="hidden sm:inline-flex items-center gap-1.5 bg-white text-black hover:bg-neutral-200 font-medium px-3.5 py-1.5 rounded-md text-xs transition-all shadow-sm shrink-0"
+                    >
+                      <span>{t("header_apply")}</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              <LangSwitch />
+            </div>
           </div>
         </div>
         {demoOn && (
@@ -289,21 +366,21 @@ export function Shell({
         <div key={location} className={`page-enter mx-auto px-4 sm:px-6 ${room ? `${maxW} pt-3 pb-5 sm:pt-6 sm:pb-8` : `${maxW} py-8 sm:py-14`}`}>{children}</div>
       </main>
       <footer className="mt-auto relative z-[1]">
-        <div className={`mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border ${maxW}`}>
+        <div className={`mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-neutral-800/60 ${maxW}`}>
           <button onClick={() => navigate("/organisations")} data-testid="link-footer-orgs"
-            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">
+            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-neutral-400 hover:text-white transition-colors inline-flex items-center">
             {t("nav_orgs")}
           </button>
           <button onClick={() => navigate("/organisations?section=process")} data-testid="link-footer-process"
-            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">
+            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-neutral-400 hover:text-white transition-colors inline-flex items-center">
             {t("footer_process")}
           </button>
           <button onClick={() => navigate("/organisations?section=operator")} data-testid="link-footer-operator"
-            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">
+            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-neutral-400 hover:text-white transition-colors inline-flex items-center">
             {t("footer_operator")}
           </button>
           <a href={`mailto:${CONTACT_EMAIL}`} data-testid="link-footer-support"
-            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">
+            className="min-h-11 sm:min-h-8 max-sm:min-w-[2.75rem] max-sm:px-2 text-xs text-neutral-400 hover:text-white transition-colors inline-flex items-center">
             {t("footer_support")}
           </a>
           <LegalFooterLinks />
@@ -322,8 +399,8 @@ export function PageHead({ title, note, action }: { kicker?: string; title: stri
   return (
     <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="max-w-2xl min-w-0">
-        <h1 className="font-display font-semibold text-2xl tracking-[-0.02em]">{title}</h1>
-        {note && <p className="mt-1.5 text-sm text-muted-foreground text-pretty">{note}</p>}
+        <h1 className="font-semibold text-2xl sm:text-3xl tracking-tight text-white leading-tight">{title}</h1>
+        {note && <p className="mt-2 text-sm text-neutral-400 leading-relaxed text-pretty">{note}</p>}
       </div>
       {action}
     </div>

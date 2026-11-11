@@ -88,8 +88,10 @@ export const PERMISSIONS_POLICY = [
 ].join(", ");
 
 export function hstsValue(env: HeaderEnv = process.env): string | null {
-  if (env.APERTURE_HSTS !== "1") return null;
-  const parsed = Number(env.APERTURE_HSTS_MAX_AGE);
+  const hsts = env.DIAVANISH_HSTS || env.APERTURE_HSTS;
+  if (hsts !== "1") return null;
+  const maxAgeRaw = env.DIAVANISH_HSTS_MAX_AGE || env.APERTURE_HSTS_MAX_AGE;
+  const parsed = Number(maxAgeRaw);
   const maxAge = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 31536000;
   return `max-age=${maxAge}; includeSubDomains`;
 }

@@ -12,7 +12,7 @@ import type {
   LedgerDocV2, SupportView, ProblemPayload, PositionPayload, EvidencePayload, OptionPayload,
   AgreementPayload, ConditionPayload, QuestionPayload,
 } from "@shared/ledger";
-import { safeUrl, isCountsView, supportFlags } from "@shared/ledger";
+import { safeUrl, isCountsView, supportFlags, canonicalJson } from "@shared/ledger";
 import { ledgerT, type LedgerLang, type LedgerKey } from "@shared/ledger-i18n";
 
 const FONT_FILES = {
@@ -296,7 +296,11 @@ footer.foot{margin-top:44px;font-family:var(--serif);font-style:italic;font-size
 </style>
 </head>
 <body>
-<div class="bar"><span>${T("brief_note")}</span><button type="button" onclick="window.print()">${T("brief_pdf")}</button></div>
+<div class="bar">
+  <span>${T("brief_note")}</span>
+  <a href="/api/public/ledger/${esc(doc.room.code)}/artifact.json" download style="color:#9BA0A8;text-decoration:underline;margin-inline-end:8px;font-size:12.5px;">Cryptographic Receipt (.json)</a>
+  <button type="button" onclick="window.print()">${T("brief_pdf")}</button>
+</div>
 <script>if(location.hash==="#print")addEventListener("load",function(){setTimeout(function(){window.print()},250)})</script>
 <main class="sheet">
   <p class="kicker">${T("br_kicker")}</p>
@@ -330,9 +334,43 @@ footer.foot{margin-top:44px;font-family:var(--serif);font-style:italic;font-size
       ${seal.destructionCert ? `<div><dt>${T("br_cert")}</dt><dd class="hash">${esc(seal.destructionCert)}</dd></div>` : ""}
     </dl>
     <p class="how"><b>${T("br_verify")}.</b> ${T("br_verify_steps", { code: doc.room.code })}</p>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);">
+      <button type="button" id="btn-offline-verify" onclick="verifySealOffline()" style="font:inherit;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;border:1px solid var(--metal);background:#fff;cursor:pointer;">Verify Offline (WebCrypto SHA-256)</button>
+      <div id="offline-verify-box" style="display:none;margin-top:10px;padding:10px 14px;border-radius:6px;font-size:12px;font-family:var(--mono);line-height:1.5;"></div>
+    </div>
   </section>
   <footer class="foot">${T("br_footer")}</footer>
 </main>
+<script id="sealed-canonical" type="application/json">${canonicalJson(doc).replace(/<\/script>/gi, "<\\/script>")}</script>
+<script>
+function verifySealOffline() {
+  var el = document.getElementById("sealed-canonical");
+  var box = document.getElementById("offline-verify-box");
+  if (!el || !box) return;
+  var txt = el.textContent || "";
+  var enc = new TextEncoder();
+  window.crypto.subtle.digest("SHA-256", enc.encode(txt)).then(function(buf) {
+    var hex = Array.prototype.map.call(new Uint8Array(buf), function(x) { return ('00' + x.toString(16)).slice(-2); }).join('');
+    var expected = "${seal.fingerprint}".toLowerCase();
+    box.style.display = "block";
+    if (hex.toLowerCase() === expected) {
+      box.style.background = "rgba(79,107,85,0.08)";
+      box.style.border = "1px solid #4F6B55";
+      box.style.color = "#2D4733";
+      box.innerHTML = "✓ VERIFIED AUTHENTIC OFFLINE: SHA-256 digest matches sealed fingerprint (" + hex + ")";
+    } else {
+      box.style.background = "rgba(154,90,66,0.08)";
+      box.style.border = "1px solid #9A5A42";
+      box.style.color = "#6E2E19";
+      box.innerHTML = "⚠ MISMATCH: Computed hash (" + hex + ") does not match sealed fingerprint";
+    }
+  }).catch(function(err) {
+    box.style.display = "block";
+    box.style.color = "#9A5A42";
+    box.textContent = "Error during verification: " + err;
+  });
+}
+</script>
 </body>
 </html>`;
 }

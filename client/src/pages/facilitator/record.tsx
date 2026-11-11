@@ -15,6 +15,7 @@ import { RECORD_KINDS, SCALES, supportFlags, type RecordKind } from "@shared/led
 import type { Room, AgendaItem, Seat } from "@shared/schema";
 import type { EntryRow, Call } from "./types";
 import { RecordBody, SupportLine, SealedRecord, parseSealed, thresholdLabel } from "@/components/ledger/record";
+import { NeutralityDialog } from "@/components/NeutralityDialog";
 
 type FieldSpec = {
   key: string; label: string; kind: "text" | "area" | "date" | "url" | "choice";
@@ -111,9 +112,18 @@ function RecordForm({ kind, initial, onSubmit, onCancel, submitLabel, open, solo
     }
     return (
       <div key={f.key} className="space-y-1.5">
-        <Label htmlFor={id} className="text-xs text-muted-foreground">
-          {f.label}{!f.required && <span className="opacity-70"> · {t("f_optional")}</span>}
-        </Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor={id} className="text-xs text-muted-foreground">
+            {f.label}{!f.required && <span className="opacity-70"> · {t("f_optional")}</span>}
+          </Label>
+          {f.kind === "area" && (form[f.key] ?? "").trim().length > 3 && (
+            <NeutralityDialog
+              currentText={form[f.key] ?? ""}
+              kind={kind}
+              onApply={(rephrased) => set(f.key, rephrased)}
+            />
+          )}
+        </div>
         {f.kind === "area" ? (
           <Textarea id={id} rows={2} value={form[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} className="min-h-[4.5rem]" />
         ) : (

@@ -5,7 +5,8 @@
  * device, and never changes what was verified.
  */
 import { ReactNode, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowDown, Languages, LockKeyhole, SendHorizontal, ShieldAlert, ShieldCheck, X } from "lucide-react";
+import { ArrowDown, Languages, LockKeyhole, SendHorizontal, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
+import { NeutralityDialog } from "@/components/NeutralityDialog";
 import { useI18n } from "@/lib/i18n";
 import type { ChatLine } from "@/lib/e2ee-client";
 import { buildItems, dayKey } from "./group";
@@ -273,6 +274,26 @@ export function ChatShell({
           disabled={disabled} aria-label={logLabel}
           placeholder={disabled && lockedReason ? t("input_paused") : placeholder}
           aria-describedby={hintId} />
+        <NeutralityDialog
+          currentText={text}
+          kind="chat_message"
+          onApply={(refinedText) => {
+            setText(refinedText);
+          }}
+          trigger={
+            <button
+              type="button"
+              data-testid="button-clarify-tone"
+              disabled={disabled || !text.trim()}
+              title="Clarify tone with Harvard Neutrality Engine"
+              aria-label="Clarify tone with Harvard Neutrality Engine"
+              className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md border border-neutral-700 bg-neutral-900/90 text-neutral-300 hover:text-white hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none transition-colors shrink-0"
+            >
+              <Sparkles className="h-4 w-4 text-emerald-400" aria-hidden />
+              <span className="hidden lg:inline text-xs font-medium">Clarify Tone</span>
+            </button>
+          }
+        />
         <button type="button" onClick={submit} disabled={disabled || !text.trim() || busy} data-testid={sendTestId}
           className="inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold transition-colors hover:bg-primary/88 disabled:opacity-45 disabled:pointer-events-none shrink-0">
           <SendHorizontal className="h-4 w-4 rtl:-scale-x-100" aria-hidden /><span className="hidden sm:inline">{t("send")}</span>

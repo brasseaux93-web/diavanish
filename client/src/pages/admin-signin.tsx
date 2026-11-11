@@ -28,23 +28,26 @@ export default function AdminSignin() {
 
   return (
     <Shell>
-      <div className="max-w-sm mx-auto">
-        <PageHead title={t("doc_admin_signin")} />
-        <div className="space-y-6">
-          <SignInMethods role="admin" fallbackNext="/admin/console" emailForm={
-            <EmailCodeForm
-              role="admin"
-              suggestedEmail={bootstrapEmail}
-              onSignedIn={() => navigate("/admin/console")}
-              ids={{ email: "input-email", request: "button-request-link", code: "input-code", verify: "button-verify" }}
-            />
-          } />
-          {bootstrapEmail && (
-            <p className="text-xs text-muted-foreground break-all" data-testid="text-bootstrap-admin">
-              {t("bootstrap_admin")}: {bootstrapEmail}
-            </p>
-          )}
-          <DemoButton role="admin" demo={demo} />
+      <div className="relative max-w-md mx-auto pt-4 sm:pt-10">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 -z-10 h-72 w-72 rounded-full bg-emerald-500/5 blur-[80px]" />
+        <div className="rounded-2xl border border-neutral-800/80 bg-[#0e1014] p-6 sm:p-8 shadow-2xl [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+          <PageHead title={t("doc_admin_signin")} />
+          <div className="space-y-6">
+            <SignInMethods role="admin" fallbackNext="/admin/console" emailForm={
+              <EmailCodeForm
+                role="admin"
+                suggestedEmail={bootstrapEmail}
+                onSignedIn={() => navigate("/admin/console")}
+                ids={{ email: "input-email", request: "button-request-link", code: "input-code", verify: "button-verify" }}
+              />
+            } />
+            {bootstrapEmail && (
+              <p className="text-xs text-neutral-400 break-all p-3 rounded-lg bg-[#12141a] border border-neutral-800" data-testid="text-bootstrap-admin">
+                <span className="font-medium text-neutral-300">{t("bootstrap_admin")}:</span> {bootstrapEmail}
+              </p>
+            )}
+            <DemoButton role="admin" demo={demo} />
+          </div>
         </div>
       </div>
     </Shell>

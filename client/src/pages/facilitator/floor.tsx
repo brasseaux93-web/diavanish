@@ -253,12 +253,27 @@ export function ProcessControls({
       <div className="space-y-2">
         <Label className="text-xs">{t("caucus_open")}</Label>
         {room.caucusSeatId ? (
-          <div className="flex items-center gap-2">
-            <span className="chip chip-seal min-w-0 truncate">{seatName(room.caucusSeatId)}</span>
-            <Button size="sm" variant="secondary" className="ms-auto" data-testid="button-caucus-close"
-              onClick={() => { setCaucusWith(""); call(() => apiJson("POST", `/api/facilitator/rooms/${room.id}/caucus`, { seatId: null })); }}>
-              {t("caucus_close")}
-            </Button>
+          <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-3 space-y-2 [box-shadow:inset_0_1px_0_0_rgba(16,185,129,0.1)]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="text-xs font-semibold text-emerald-200 truncate">
+                  Active Caucus: {seatName(room.caucusSeatId)}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 shrink-0">
+                RAM-only
+              </span>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-normal">
+              Main floor participants are in holding. Closing this sidebar shreds all caucus messages from memory.
+            </p>
+            <div className="pt-1 flex justify-end">
+              <Button size="sm" variant="secondary" className="bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-xs font-medium" data-testid="button-caucus-close"
+                onClick={() => { setCaucusWith(""); call(() => apiJson("POST", `/api/facilitator/rooms/${room.id}/caucus`, { seatId: null })); }}>
+                {t("caucus_close")} (Purge RAM & Merge)
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-1.5">

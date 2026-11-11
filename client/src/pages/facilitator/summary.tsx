@@ -92,7 +92,7 @@ export function SummaryPanel({
           <Button size="sm" variant="ghost" disabled={!latest} data-testid="button-export-summary"
             onClick={async () => {
               const res = await fetch(apiUrl(`/api/facilitator/rooms/${room.id}/summary.md`), {
-                headers: { "x-aperture-session": getSessionToken() ?? "" },
+                headers: { "x-diavanish-session": getSessionToken() ?? "", "x-aperture-session": getSessionToken() ?? "" },
               });
               if (!res.ok) { toast({ title: t("error_generic"), variant: "destructive" }); return; }
               const blob = await res.blob();

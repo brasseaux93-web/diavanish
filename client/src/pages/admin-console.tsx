@@ -145,6 +145,10 @@ export default function AdminConsole() {
 
         {/* Settings: platform defaults, sign-in policy, retention */}
         <TabsContent value="settings" className="mt-0 max-w-xl space-y-10">
+          <Group title="Neutrality Engine (Groq)" testId="group-groq">
+            <GroqNeutralityPanel />
+          </Group>
+
           <Group title={t("tab_platform")} testId="group-platform">
             <PlatformPanel initial={s} />
           </Group>
@@ -445,6 +449,106 @@ function SignInPolicy({ initial }: { initial: PlatformSettings }) {
         checked={form.emailCodeEnabled} onChange={(v) => setForm({ ...form, emailCodeEnabled: v })} />
       <Button type="submit" size="sm" data-testid="button-save-signin" disabled={busy}>{t("save")}</Button>
     </form>
+  );
+}
+
+function GroqNeutralityPanel() {
+  const { toast } = useToast();
+  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("diavanish_groq_key") || "");
+  const [testing, setTesting] = useState(false);
+  const [status, setStatus] = useState<{ configured: boolean; model: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ ok: boolean; models?: string[]; error?: string } | null>(null);
+
+  useEffect(() => {
+    apiJson<{ configured: boolean; model: string }>("GET", "/api/neutrality/status")
+      .then(setStatus)
+      .catch(() => {});
+  }, []);
+
+  const handleTest = async () => {
+    if (!apiKey.trim() && !status?.configured) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await apiJson<{ ok: boolean; models?: string[]; error?: string }>("POST", "/api/neutrality/test-key", {
+        apiKey: apiKey.trim() || undefined,
+      });
+      setTestResult(res);
+      if (res.ok) {
+        if (apiKey.trim()) sessionStorage.setItem("diavanish_groq_key", apiKey.trim());
+        toast({ title: "Groq Connection Validated", description: "In-memory connection active." });
+      }
+    } catch (err: any) {
+      setTestResult({ ok: false, error: err.message || "Failed to test key" });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 rounded-xl border border-neutral-800 bg-[#0e1014] p-5 [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.03)]">
+      <div className="flex items-center justify-between pb-3 border-b border-neutral-800/80">
+        <div>
+          <span className="text-sm font-semibold text-white">Groq Neutrality Engine</span>
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Ephemeral Harvard Negotiation multi-agent pipeline {status?.model ? `· ${status.model}` : ""}
+          </p>
+        </div>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium ${
+          status?.configured || testResult?.ok
+            ? "border border-emerald-800/60 bg-emerald-950/40 text-emerald-400"
+            : "border border-amber-800/60 bg-amber-950/40 text-amber-300"
+        }`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${status?.configured || testResult?.ok ? "bg-emerald-400" : "bg-amber-400"}`} />
+          {status?.configured ? "Server Configured" : testResult?.ok ? "Session Active" : "Unconfigured"}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <Label htmlFor="admin-groq-key" className="text-xs font-medium text-neutral-300">API Key Template</Label>
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline inline-flex items-center gap-1 text-[11px]">
+            <span>Get Groq Key</span>
+          </a>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            id="admin-groq-key"
+            type="password"
+            placeholder="gsk_..."
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="font-mono bg-[#12141a] border-neutral-800 text-white text-xs flex-1"
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleTest}
+            disabled={testing || (!apiKey.trim() && !status?.configured)}
+            className="shrink-0"
+          >
+            {testing ? "Testing..." : apiKey.trim() ? "Test & Save Session" : "Test Server Key"}
+          </Button>
+        </div>
+      </div>
+
+      {testResult && (
+        <div className={`p-3 rounded-lg text-xs ${testResult.ok ? "bg-emerald-950/20 border border-emerald-900/60 text-emerald-300" : "bg-red-950/20 border border-red-900/60 text-red-300"}`}>
+          {testResult.ok ? (
+            <div>
+              <p className="font-medium">Connection verified successfully!</p>
+              <p className="text-[11px] text-neutral-400 mt-1">Available models: {testResult.models?.slice(0, 3).join(", ") || "llama-3.3-70b-versatile"}...</p>
+            </div>
+          ) : (
+            <p>{testResult.error}</p>
+          )}
+        </div>
+      )}
+
+      <p className="text-[11px] text-neutral-500 leading-relaxed">
+        Zero Disk Logging Guarantee: API keys and conversation drafts are processed strictly in RAM and never written to the SQLite database.
+      </p>
+    </div>
   );
 }
 

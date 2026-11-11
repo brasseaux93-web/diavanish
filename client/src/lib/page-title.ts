@@ -1,4 +1,4 @@
-/** Per-route document titles. The brand name comes from i18n (`aperture`). */
+/** Per-route document titles. The brand name comes from i18n (`diavanish`). */
 
 const ROUTES: { test: (path: string) => boolean; key: string }[] = [
   { test: (p) => p === "/" || p === "", key: "doc_home" },
@@ -21,7 +21,7 @@ export function titleKeyForPath(path: string): string {
 }
 
 export function pageTitle(path: string, t: (key: string) => string): string {
-  const brand = t("aperture");
+  const brand = t("diavanish") || t("aperture");
   const key = titleKeyForPath(path);
   const label = t(key);
   return label === brand ? brand : `${label} · ${brand}`;

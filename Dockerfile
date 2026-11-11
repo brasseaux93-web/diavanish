@@ -20,7 +20,8 @@ FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=5000 \
-    APERTURE_DB=/data/aperture.db \
+    DIAVANISH_DB=/data/diavanish.db \
+    APERTURE_DB=/data/diavanish.db \
     NPM_CONFIG_CACHE=/tmp/.npm \
     HOME=/tmp
 # Production node_modules only (devDependencies pruned in the build stage).

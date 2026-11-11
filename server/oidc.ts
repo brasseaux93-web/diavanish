@@ -29,28 +29,34 @@ function gc() {
   for (const [k, v] of Array.from(tickets.entries())) if (v.expires < t) tickets.delete(k);
 }
 
+function oidcVal(name: string): string | undefined {
+  return process.env["DIAVANISH_OIDC_" + name] || process.env["APERTURE_OIDC_" + name];
+}
+
 export function oidcStatus() {
   const enabled = !!(
-    process.env.APERTURE_OIDC_ISSUER &&
-    process.env.APERTURE_OIDC_CLIENT_ID &&
-    process.env.APERTURE_OIDC_CLIENT_SECRET
+    oidcVal("ISSUER") &&
+    oidcVal("CLIENT_ID") &&
+    oidcVal("CLIENT_SECRET")
   );
-  return { enabled, name: enabled ? (process.env.APERTURE_OIDC_NAME || null) : null };
+  return { enabled, name: enabled ? (oidcVal("NAME") || null) : null };
 }
 
 function originOf(req: Request) {
-  if (process.env.APERTURE_ORIGIN) return process.env.APERTURE_ORIGIN.replace(/\/$/, "");
+  const origin = process.env.DIAVANISH_ORIGIN || process.env.APERTURE_ORIGIN;
+  if (origin) return origin.replace(/\/$/, "");
   const host = String(req.get("x-forwarded-host") || req.get("host") || "localhost");
   const proto = String(req.get("x-forwarded-proto") || req.protocol || "http").split(",")[0].trim();
   return `${proto}://${host}`;
 }
 
 function redirectUriOf(req: Request) {
-  return process.env.APERTURE_OIDC_REDIRECT_URI || `${originOf(req)}/api/auth/oidc/callback`;
+  return oidcVal("REDIRECT_URI") || `${originOf(req)}/api/auth/oidc/callback`;
 }
 
 function csv(name: string) {
-  return (process.env[name] || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const raw = process.env["DIAVANISH_" + name] || process.env["APERTURE_" + name] || process.env[name] || "";
+  return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 }
 
 function claimList(value: unknown): string[] {
@@ -62,9 +68,9 @@ function claimList(value: unknown): string[] {
 let cached: { key: string; config: client.Configuration } | null = null;
 
 async function configuration(): Promise<client.Configuration> {
-  const issuer = process.env.APERTURE_OIDC_ISSUER;
-  const clientId = process.env.APERTURE_OIDC_CLIENT_ID;
-  const secret = process.env.APERTURE_OIDC_CLIENT_SECRET;
+  const issuer = oidcVal("ISSUER");
+  const clientId = oidcVal("CLIENT_ID");
+  const secret = oidcVal("CLIENT_SECRET");
   if (!issuer || !clientId || !secret) {
     const err: any = new Error("Agency sign-in is not configured on this server");
     err.status = 404;
@@ -105,7 +111,7 @@ export async function oidcStart(req: Request, res: Response) {
   const redirectUri = redirectUriOf(req);
   gc();
   pending.set(state, { role, verifier, nonce, redirectUri, expires: Date.now() + 10 * 60_000 });
-  const scope = process.env.APERTURE_OIDC_SCOPES || "openid email profile";
+  const scope = oidcVal("SCOPES") || "openid email profile";
   const url = client.buildAuthorizationUrl(config, {
     redirect_uri: redirectUri,
     scope,
@@ -149,7 +155,7 @@ export async function oidcCallback(req: Request, res: Response) {
       if (!domains.includes(domain)) return failRedirect(req, res, "domain", rec.role);
     }
 
-    const roleClaim = process.env.APERTURE_OIDC_ROLE_CLAIM?.trim();
+    const roleClaim = oidcVal("ROLE_CLAIM")?.trim();
     if (roleClaim) {
       const have = claimList(claims[roleClaim]);
       const want = rec.role === "admin" ? csv("APERTURE_OIDC_ADMIN_VALUES") : csv("APERTURE_OIDC_FACILITATOR_VALUES");

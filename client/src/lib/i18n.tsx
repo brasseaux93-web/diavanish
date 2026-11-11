@@ -5,6 +5,7 @@ export type Lang = "en" | "ar" | "fr" | "es";
 const en: Record<string, string> = {
   // Shell
   aperture: "Diavanish",
+  diavanish: "Diavanish",
   tagline: "The transcript is thrown out. The ledger remains.",
   role_admin: "Administrator",
   role_facilitator: "Facilitator",
@@ -859,6 +860,7 @@ const en: Record<string, string> = {
 
 const ar: Record<string, string> = {
   aperture: "ديافانيش",
+  diavanish: "ديافانيش",
   tagline: "المحضر يُرمى. يبقى السجل.",
   role_admin: "مدير",
   role_facilitator: "ميسّر",

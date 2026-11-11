@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -5,6 +6,6 @@ export default defineConfig({
   schema: "./shared/schema.ts",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.APERTURE_DB || "./data.db",
+    url: process.env.DIAVANISH_DB || process.env.APERTURE_DB || "./data.db",
   },
 });

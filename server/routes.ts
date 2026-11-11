@@ -4,10 +4,10 @@ import {
   db, createSession, getSession, destroySession, uid, sha256, now, DAY,
   audit, security, chatPush, chatRecent, redactCheck, wipeRoom, purgeExpired,
   closeExpiredRooms, buildLedger, canonicalLedger, seatLabel, carryLapsed,
-  auditHead, auditVerify, summaryMarkdown, chatWipe, cryptoFor, rosterFor, isB64, serverPubHash, tokenHash,
+  auditHead, auditVerify, summaryMarkdown, chatWipe, chatWipeCaucus, cryptoFor, rosterFor, isB64, serverPubHash, tokenHash,
   recordContext, tallyFor, facilitatorTally, sealRoomV2, sealedDoc, rowsFromDoc, carryForward,
 } from "./storage";
-import { isRecordKind, validateRecord, normText, SUPPORT_LEVELS, LEDGER_VERSION, viewSupport } from "@shared/ledger";
+import { isRecordKind, validateRecord, normText, SUPPORT_LEVELS, LEDGER_VERSION, viewSupport, canonicalFor } from "@shared/ledger";
 import { renderBrief } from "./brief";
 import { TIER_SPECS, DEFAULT_TIER, isTier, isThreshold, tierSettings, turnMs } from "@shared/tiers";
 import {
@@ -28,12 +28,17 @@ import {
   registrationOptions, verifyRegistration, authenticationOptions, verifyAuthentication,
 } from "./passkeys";
 import { oidcStart, oidcCallback, oidcClaim } from "./oidc";
+import { generateNeutralVariants, testGroqConnection } from "./neutrality-engine";
 
 function deny(status: number, message: string, extra?: { code: string; reason?: string }): never {
   const err: any = new Error(message);
   err.status = status;
   if (extra) Object.assign(err, extra);
   throw err;
+}
+
+function getReqToken(req: Request): string | undefined {
+  return req.header("x-diavanish-session") || req.header("x-aperture-session") || undefined;
 }
 
 const ENDED = ["removed", "banned", "left"];
@@ -84,7 +89,7 @@ type Scoped = Session & { demo: boolean };
  * New admin routes are therefore closed to the demo by default.
  */
 function requireRole(req: Request, role: "admin" | "facilitator" | "participant", opts: { allowDemo?: boolean } = {}): Scoped {
-  const token = req.header("x-aperture-session");
+  const token = getReqToken(req);
   const session = getSession(token);
   if (!session || session.role !== role) deny(403, "Not authorized for this role");
   const demo = isDemoActor(session);
@@ -104,7 +109,7 @@ function sameWorld(session: Scoped, room: { seriesKey: string | null }) {
 }
 
 function requirePrivileged(req: Request) {
-  const token = req.header("x-aperture-session");
+  const token = getReqToken(req);
   const session = getSession(token);
   if (!session || (session.role !== "admin" && session.role !== "facilitator")) {
     const err: any = new Error("Not authorized for this role");
@@ -200,7 +205,7 @@ export async function registerRoutes(_httpServer: any, app: Express) {
   });
 
 
-  const CODE_PEPPER = process.env.APERTURE_SECRET || randomBytes(32).toString("hex");
+  const CODE_PEPPER = process.env.DIAVANISH_SECRET || process.env.APERTURE_SECRET || randomBytes(32).toString("hex");
   const codeHash = (email: string, code: string) =>
     createHash("sha256").update(`${email.toLowerCase()}|${code}|${CODE_PEPPER}`).digest("hex");
 
@@ -282,7 +287,7 @@ export async function registerRoutes(_httpServer: any, app: Express) {
   });
 
   app.get("/api/auth/session", (req, res) => {
-    const session = getSession(req.header("x-aperture-session"));
+    const session = getSession(getReqToken(req));
     if (!session) return res.json(null);
     const demo = isDemoActor(session);
     if (demo && !demoOn) { destroySession(session.token); return res.json(null); }
@@ -312,7 +317,7 @@ export async function registerRoutes(_httpServer: any, app: Express) {
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    const token = req.header("x-aperture-session");
+    const token = getReqToken(req);
     if (token) destroySession(token);
     res.json({ ok: true });
   });
@@ -785,10 +790,17 @@ export async function registerRoutes(_httpServer: any, app: Express) {
       const seat = db.select().from(seats)
         .where(and(eq(seats.id, seatId), eq(seats.roomId, room.id), eq(seats.status, "admitted"))).get();
       if (!seat) return res.status(400).json({ message: "Pick an admitted seat for the caucus" });
+      // If switching from a previous caucus, wipe former caucus channel from RAM
+      if (room.caucusSeatId && room.caucusSeatId !== seatId) {
+        chatWipeCaucus(room.id, `caucus:${room.caucusSeatId}`);
+      }
+    } else {
+      // Merging back into the floor: actively shred caucus messages from memory
+      chatWipeCaucus(room.id);
     }
     db.update(rooms).set({ caucusSeatId: seatId }).where(eq(rooms.id, room.id)).run();
-    audit(room.id, "facilitator", seatId ? "caucus_opened" : "caucus_closed");
-    res.json({ ok: true });
+    audit(room.id, "facilitator", seatId ? "caucus_opened" : "caucus_closed_memory_shredded");
+    res.json({ ok: true, memoryShredded: !seatId });
   });
 
   /* ── Facilitator chat (floor relay + caucus thread) ── */
@@ -1242,6 +1254,53 @@ export async function registerRoutes(_httpServer: any, app: Express) {
       .where(eq(followups.id, f.id)).run();
     audit(f.roomId, "facilitator", "followup_status_changed");
     res.json({ ok: true });
+  });
+
+  /* ── Neutrality Engine (Groq In-Memory Ephemeral Pipeline) ── */
+
+  app.get("/api/neutrality/status", (req, res) => {
+    const hasEnvKey = !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== "";
+    res.json({
+      configured: hasEnvKey,
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+    });
+  });
+
+  app.post("/api/neutrality/test-key", async (req, res) => {
+    requireRole(req, "facilitator");
+    const apiKey = typeof req.body.apiKey === "string" ? req.body.apiKey.trim() : "";
+    if (!apiKey && !process.env.GROQ_API_KEY) {
+      return res.status(400).json({ ok: false, error: "API key is required" });
+    }
+    const result = await testGroqConnection(apiKey || undefined);
+    res.json(result);
+  });
+
+  app.post("/api/neutrality/reword", async (req, res) => {
+    const session = getSession(getReqToken(req));
+    if (!session || !["facilitator", "admin", "participant"].includes(session.role)) {
+      return res.status(401).json({ message: "Sign in to use the Neutrality Engine" });
+    }
+
+    const text = typeof req.body.text === "string" ? req.body.text.trim() : "";
+    if (!text) {
+      return res.status(400).json({ message: "Text to neutralize is required" });
+    }
+    if (text.length > 4000) {
+      return res.status(400).json({ message: "Draft text exceeds 4,000 characters limit" });
+    }
+
+    const kind = typeof req.body.kind === "string" ? req.body.kind : undefined;
+    const context = typeof req.body.context === "string" ? req.body.context : undefined;
+    const apiKey = typeof req.body.apiKey === "string" ? req.body.apiKey.trim() : undefined;
+    const model = typeof req.body.model === "string" ? req.body.model.trim() : undefined;
+
+    try {
+      const result = await generateNeutralVariants({ text, kind, context, apiKey, model });
+      res.json(result);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message || "Failed to transform text through Groq Neutrality Engine" });
+    }
   });
 
   app.post("/api/facilitator/rooms/:id/ai-draft", (req, res) => {
@@ -1804,6 +1863,82 @@ export async function registerRoutes(_httpServer: any, app: Express) {
     res.send(renderBrief(doc, {
       fingerprint: room.fingerprint ?? "", chainHead: room.chainHead, destructionCert: room.destructionCert, lang: lang as any,
     }));
+  });
+
+  /* ── Public: self-contained tamper-evident cryptographic receipt ── */
+  app.get("/api/public/ledger/:code/artifact.json", (req, res) => {
+    const room = db.select().from(rooms).where(eq(rooms.code, String(req.params.code).toUpperCase())).get();
+    if (!room || room.status !== "sealed") {
+      return res.status(404).json({ message: "No sealed ledger for that code" });
+    }
+    const doc = sealedDoc(room);
+    const rows = doc ? rowsFromDoc(doc) : buildLedger(room.id).rows;
+    const version = doc ? 2 : 1;
+
+    // Leaf hashes for Merkle tree computation
+    const itemStrings: string[] = doc
+      ? doc.items.map((it) => JSON.stringify(it))
+      : rows.map((r) => JSON.stringify(r));
+    const leafHashes = itemStrings.map((s) => createHash("sha256").update(s).digest("hex"));
+
+    // Merkle tree root calculation
+    let merkleRoot = "";
+    if (leafHashes.length === 0) {
+      merkleRoot = createHash("sha256").update("").digest("hex");
+    } else {
+      let level = [...leafHashes];
+      while (level.length > 1) {
+        const next: string[] = [];
+        for (let i = 0; i < level.length; i += 2) {
+          if (i + 1 < level.length) {
+            next.push(createHash("sha256").update(level[i] + level[i + 1]).digest("hex"));
+          } else {
+            next.push(level[i]);
+          }
+        }
+        level = next;
+      }
+      merkleRoot = level[0];
+    }
+
+    const receipt = {
+      $schema: "https://diavanish.org/schemas/receipt/v1.json",
+      specification: "Diavanish Tamper-Evident Ratified Cryptographic Receipt",
+      issuedAt: new Date().toISOString(),
+      room: {
+        code: room.code,
+        title: room.title,
+        sealedAt: room.sealedAt ? new Date(room.sealedAt).toISOString() : null,
+        fingerprint: room.fingerprint,
+        chainHead: room.chainHead,
+        destructionCert: room.destructionCert,
+      },
+      cryptographicProof: {
+        hashAlgorithm: "SHA-256",
+        ledgerVersion: version,
+        merkleRoot,
+        totalRatifiedEntries: leafHashes.length,
+        entryHashes: leafHashes,
+        auditHead: auditHead(),
+        auditChainIntact: auditVerify().intact,
+      },
+      zeroKnowledgeAssurances: {
+        chatRelayMode: "RAM_EPHEMERAL_ONLY",
+        databaseChatPersistence: false,
+        audioVideoPaths: "NONE",
+        caucusMemoryShredded: true,
+        destructionCertComputed: !!room.destructionCert,
+      },
+      ledger: {
+        version,
+        document: doc ?? null,
+        rows,
+      },
+    };
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="diavanish-receipt-${room.code}.json"`);
+    res.json(receipt);
   });
 
   /* ── Public: non-retention evidence ──

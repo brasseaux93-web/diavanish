@@ -7,14 +7,17 @@ services:
     volumes:
       - diavanish-data:/data
     environment:
-      APERTURE_SECRET: ${APERTURE_SECRET:?set a long random value}
-      # One-click demos are off by default. Never enable them on a server with real rooms.
-      APERTURE_ADMIN_EMAIL: ${APERTURE_ADMIN_EMAIL:?your administrator email}
-      # Pick one way to deliver sign-in codes:
+      DIAVANISH_SECRET: ${DIAVANISH_SECRET:-${APERTURE_SECRET:-}}
+      APERTURE_SECRET: ${DIAVANISH_SECRET:-${APERTURE_SECRET:-}}
+      DIAVANISH_ADMIN_EMAIL: ${DIAVANISH_ADMIN_EMAIL:-${APERTURE_ADMIN_EMAIL:-}}
+      APERTURE_ADMIN_EMAIL: ${DIAVANISH_ADMIN_EMAIL:-${APERTURE_ADMIN_EMAIL:-}}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      APERTURE_MAIL_FROM: ${APERTURE_MAIL_FROM:-}
-      APERTURE_MAIL_WEBHOOK: ${APERTURE_MAIL_WEBHOOK:-}
-      APERTURE_MAIL_WEBHOOK_SECRET: ${APERTURE_MAIL_WEBHOOK_SECRET:-}
+      DIAVANISH_MAIL_FROM: ${DIAVANISH_MAIL_FROM:-${APERTURE_MAIL_FROM:-}}
+      APERTURE_MAIL_FROM: ${DIAVANISH_MAIL_FROM:-${APERTURE_MAIL_FROM:-}}
+      DIAVANISH_MAIL_WEBHOOK: ${DIAVANISH_MAIL_WEBHOOK:-${APERTURE_MAIL_WEBHOOK:-}}
+      APERTURE_MAIL_WEBHOOK: ${DIAVANISH_MAIL_WEBHOOK:-${APERTURE_MAIL_WEBHOOK:-}}
+      DIAVANISH_MAIL_WEBHOOK_SECRET: ${DIAVANISH_MAIL_WEBHOOK_SECRET:-${APERTURE_MAIL_WEBHOOK_SECRET:-}}
+      APERTURE_MAIL_WEBHOOK_SECRET: ${DIAVANISH_MAIL_WEBHOOK_SECRET:-${APERTURE_MAIL_WEBHOOK_SECRET:-}}
     # Writable surface is the data volume only. /tmp is a scratch tmpfs for
     # Node (HOME=/tmp). Everything else, including the image, is read-only.
     read_only: true

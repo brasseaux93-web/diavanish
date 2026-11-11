@@ -1,6 +1,7 @@
 /* Generated from the English dictionary; review by a native speaker before a pilot. */
 export const es: Record<string, string> = {
   aperture: "Diavanish",
+  diavanish: "Diavanish",
   tagline: "La transcripción se descarta. El registro permanece.",
   role_admin: "Administrador",
   role_facilitator: "Facilitador",
