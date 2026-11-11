@@ -21,11 +21,10 @@
   --elevate-1: rgba(255, 255, 255, 0.03);
   --elevate-2: rgba(255, 255, 255, 0.07);
 
-  /* Obsidian slate (honed granite): three matte tone steps, no pure black.
-     base #0B0C10 · raised #111318 · cards #161922 · controls #1E222C */
-  --background: 228 18.5% 5.3%;      /* #0B0C10 base */
-  --foreground: 50 14% 84%;          /* warm parchment ink, unchanged */
-  --parchment: #F4EEDD;              /* warm ivory for titles & high-clarity hierarchy */
+  /* Charcoal base with warm ivory text. Restrained jade (primary) and brass (seal). */
+  --background: 220 14% 6%;          /* charcoal */
+  --foreground: 40 20% 88%;          /* warm ivory */
+  --parchment: #F5F0E6;              /* warm ivory for titles */
   --border: 225 9% 18%;              /* solid fallback ≈ white 7% on raised */
   --card: 225 21.4% 11%;             /* #161922 */
   --card-foreground: 50 14% 84%;
@@ -41,7 +40,7 @@
   --popover: 225 21.4% 11%;          /* #161922 */
   --popover-foreground: 50 14% 84%;
   --popover-border: 225 9% 21%;
-  --primary: 145 16% 64%;            /* sage, unchanged */
+  --primary: 160 25% 48%;            /* restrained jade */
   --primary-foreground: 228 18.5% 5.3%;
   --secondary: 223 18.9% 14.5%;      /* #1E222C */
   --secondary-foreground: 50 14% 84%;
@@ -61,7 +60,7 @@
 
   /* Vault extras */
   /* Natural, low-chroma accents: sage, clay, moss, sand. Nothing glows. */
-  --seal: 30 30% 64%;       /* clay — sealing, immutability */
+  --seal: 38 35% 55%;       /* brass — sealing, immutability */
   --ok: 145 16% 64%;        /* same sage as actions: one affirmative colour */
   --warn: 44 58% 64%;       /* ochre — needs attention, never alarm; warmer and brighter than the clay seal */
   --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
