@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BentoCard } from "@/components/BentoCard";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useNarrow } from "@/hooks/use-narrow";
@@ -22,6 +23,7 @@ import { turnMs } from "@shared/tiers";
 import { RecordBody, SupportLine, SealedRecord, RoomRuleChips, kindLabel } from "@/components/ledger/record";
 
 const isRecord = (k: string) => (RECORD_KINDS as readonly string[]).includes(k);
+const STAGES = ["opening", "joint", "caucus", "drafting", "closing"] as const;
 
 type Proposal = {
   id: number; kind: string; agendaItemId: number | null; version: number; carriedFrom: string | null;
@@ -337,143 +339,267 @@ export default function ParticipantRoom() {
           </TabsContent>
         </Tabs>
 
-        {/* Side panel: where the process is, who is here, and your seat */}
-        <aside className="side-panel lg:sticky lg:top-20 [&>section]:py-5 [&>section:first-child]:pt-0 lg:[&>section:first-child]:pt-1">
-          <section>
-            <StageStrip room={room} inCaucus={inCaucus} />
-          </section>
+        {/* Sleek Geist-inspired Bento Grid Right-Hand Panel */}
+        <aside className="w-full lg:w-80 flex flex-col gap-3.5 lg:sticky lg:top-20">
+          {/* STAGE: High priority, top of the grid */}
+          <BentoCard
+            title={t("stage")}
+            testId="card-stage"
+            action={
+              <CalmTime
+                endsAt={room.stageEndsAt}
+                running={!!room.stageEndsAt && room.stageEndsAt > Date.now()}
+                testId="text-stage-timer"
+              />
+            }
+          >
+            <div className="flex flex-col gap-2.5">
+              <div className="flex justify-between items-end">
+                <span className="text-zinc-100 font-medium tracking-tight">
+                  {t(`stage_${STAGES[Math.max(0, STAGES.indexOf(room.stage as any))]}`)}
+                </span>
+                <span className="text-xs text-zinc-500 font-mono">
+                  {t("stage_of", { n: Math.max(0, STAGES.indexOf(room.stage as any)) + 1, total: STAGES.length })}
+                </span>
+              </div>
+              {/* Subtle Progress Bar */}
+              <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden flex gap-1 p-0.5">
+                {STAGES.map((st, i) => {
+                  const currentIdx = Math.max(0, STAGES.indexOf(room.stage as any));
+                  return (
+                    <div
+                      key={st}
+                      title={t(`stage_${st}`)}
+                      className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                        i < currentIdx
+                          ? "bg-emerald-500/80"
+                          : i === currentIdx
+                          ? "bg-emerald-400"
+                          : "bg-zinc-800/80"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              {room.inputLocked && !inCaucus && (
+                <p className="text-xs text-amber-400 mt-1" data-testid="text-input-locked">
+                  {t("input_locked_banner")}
+                </p>
+              )}
+              {inCaucus && <p className="text-xs text-emerald-400 mt-1">{t("caucus_active")}</p>}
+              {!inCaucus && room.caucusSeatId && (
+                <p className="text-xs text-zinc-500 mt-1">{t("caucus_room_note")}</p>
+              )}
+            </div>
+          </BentoCard>
 
-          <section>
-            <h2 className="side-title">{t("seats")}</h2>
-            <ul className="space-y-0.5">
+          {/* SEATS: Scrollable interior if it gets too long */}
+          <BentoCard
+            title={t("seats")}
+            action={
+              <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800/80">
+                {seats.filter((s) => s.status === "admitted").length}
+              </span>
+            }
+          >
+            <ul className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
               {seats.filter((s) => s.status === "admitted" || s.status === "waiting").map((s) => {
                 const speaking = running && s.id === room.floorSeatId;
+                const isMe = s.id === seat.id;
                 return (
-                  <li key={s.id} className={`flex items-start gap-2.5 text-sm rounded-md -mx-2.5 px-2.5 py-1.5 ${speaking ? "surface-active" : ""}`}>
-                    <span className="mt-2"><StatusDot tone={s.status === "admitted" ? "ok" : "warn"} /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className={`block truncate ${s.id === seat.id ? "font-medium" : ""}`}>
-                        {s.label}{s.id === seat.id && <span className="text-muted-foreground font-normal"> · {t("you_suffix")}</span>}
+                  <li
+                    key={s.id}
+                    className={`flex items-start gap-2.5 p-2 rounded-lg transition-colors ${
+                      speaking
+                        ? "bg-zinc-900 border border-zinc-800"
+                        : isMe
+                        ? "bg-emerald-950/20 border border-emerald-900/30"
+                        : "hover:bg-zinc-900/40"
+                    }`}
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
+                        isMe
+                          ? "bg-emerald-400 ring-2 ring-emerald-500/20"
+                          : s.status === "admitted"
+                          ? "bg-zinc-600"
+                          : "bg-amber-500/80"
+                      }`}
+                    />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className={`truncate text-sm ${isMe ? "text-emerald-50 font-medium" : "text-zinc-200"}`}>
+                        {s.label}{isMe && <span className="text-zinc-500 font-normal"> · {t("you_suffix")}</span>}
                       </span>
-                      <span className="block text-xs text-muted-foreground truncate">
+                      <span className="text-xs text-zinc-500 truncate">
                         {s.claimedRole}{s.status === "waiting" && <> · {t("waiting")}</>}
                       </span>
                       <RoleBadge result={attest[s.id]} compact />
-                    </span>
+                    </div>
                   </li>
                 );
               })}
             </ul>
-          </section>
+          </BentoCard>
 
+          {/* AGENDA: Clean numbered list */}
           {agenda.length > 0 && (
-            <section>
-              <h2 className="side-title">{t("agenda")}</h2>
-              <ol className="space-y-1.5">
-                {agenda.map((a) => (
-                  <li key={a.id} className="flex items-baseline gap-2.5 text-sm">
-                    <span className="mono-data text-xs text-muted-foreground w-4 shrink-0">{a.position}</span>
-                    <span className={`min-w-0 ${a.status === "covered" ? "text-muted-foreground line-through" : ""}`}>{a.title}</span>
-                  </li>
-                ))}
+            <BentoCard title={t("agenda")}>
+              <ol className="flex flex-col gap-2 list-none m-0 p-0 text-sm">
+                {agenda.map((a, i) => {
+                  const isCovered = a.status === "covered";
+                  const numStr = String(a.position || i + 1).padStart(2, "0");
+                  return (
+                    <li
+                      key={a.id}
+                      className={`flex items-start gap-3 text-sm transition-colors ${
+                        isCovered ? "text-zinc-600 line-through" : "text-zinc-300"
+                      }`}
+                    >
+                      <span
+                        className={`font-mono text-xs shrink-0 mt-0.5 ${
+                          isCovered ? "text-zinc-700" : "text-emerald-500/70"
+                        }`}
+                      >
+                        {numStr}
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug">{a.title}</span>
+                    </li>
+                  );
+                })}
               </ol>
-            </section>
+            </BentoCard>
           )}
 
-          <section>
-            <h2 className="side-title">{t("identity")}</h2>
-            <p className="font-medium">
-              {seat.useRealName && seat.realName ? seat.realName : seat.pseudonym}
-            </p>
-            <p className="text-sm text-muted-foreground">{seat.claimedRole}</p>
-            <RoleBadge result={attest[seat.id]} />
-            {recoveryKey && (
-              <div className="mt-4" data-testid="card-recovery">
-                <p className="text-xs text-muted-foreground">{t("recovery_key")}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <code className="mono-data break-all text-[0.9375rem] min-w-0 flex-1">{recoveryKey}</code>
-                  <Button size="sm" variant="ghost" className="shrink-0" data-testid="button-copy-recovery-p" aria-label={`${t("copy")}: ${t("recovery_key")}`}
-                    onClick={async () => {
-                      try { await navigator.clipboard.writeText(recoveryKey); toast({ title: t("copied") }); }
-                      catch { toast({ title: t("copy_failed"), variant: "destructive" }); }
-                    }}>
-                    <Copy className="h-3.5 w-3.5" aria-hidden />{t("copy")}
-                  </Button>
+          {/* IDENTITY: Bottom anchor */}
+          <BentoCard
+            title={t("identity")}
+            action={
+              room.anonymityMode === "open" && seat.realName && !seat.useRealName ? (
+                <button
+                  type="button"
+                  data-testid="button-reveal-name"
+                  className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 uppercase tracking-wider transition-colors"
+                  onClick={async () => {
+                    try {
+                      await apiJson("POST", "/api/participant/reveal-name");
+                      qc.invalidateQueries({ queryKey: ["/api/participant/room"] });
+                      toast({ title: t("name_revealed") });
+                    } catch (e: any) {
+                      toast({ title: e.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  {t("reveal_name")}
+                </button>
+              ) : undefined
+            }
+          >
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="font-medium text-zinc-100">
+                  {seat.useRealName && seat.realName ? seat.realName : seat.pseudonym}
+                </p>
+                <p className="text-xs text-zinc-400 mt-0.5">{seat.claimedRole}</p>
+                <div className="mt-1">
+                  <RoleBadge result={attest[seat.id]} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed text-pretty">{t("recovery_note")}</p>
               </div>
-            )}
-            {room.anonymityMode === "open" && seat.realName && !seat.useRealName && (
-              <Button size="sm" variant="secondary" className="mt-4" data-testid="button-reveal-name"
-                onClick={async () => {
-                  try {
-                    await apiJson("POST", "/api/participant/reveal-name");
-                    qc.invalidateQueries({ queryKey: ["/api/participant/room"] });
-                    toast({ title: t("name_revealed") });
-                  } catch (e: any) {
-                    toast({ title: e.message, variant: "destructive" });
-                  }
-                }}>
-                {t("reveal_name")}
-              </Button>
-            )}
-          </section>
 
+              {recoveryKey && (
+                <div className="flex flex-col gap-2 mt-1" data-testid="card-recovery">
+                  <div className="flex justify-between items-center bg-zinc-900/60 px-3 py-2 rounded-lg border border-zinc-800/60">
+                    <span className="font-mono text-xs text-zinc-300 tracking-wider truncate mr-2">{recoveryKey}</span>
+                    <button
+                      type="button"
+                      data-testid="button-copy-recovery-p"
+                      aria-label={`${t("copy")}: ${t("recovery_key")}`}
+                      className="text-xs font-mono text-zinc-400 hover:text-zinc-100 transition-colors shrink-0"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(recoveryKey);
+                          toast({ title: t("copied") });
+                        } catch {
+                          toast({ title: t("copy_failed"), variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {t("copy")}
+                    </button>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-zinc-500">
+                    {t("recovery_note")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </BentoCard>
+
+          {/* COMMITMENTS: If present */}
           {followups.length > 0 && (
-            <section>
-              <h2 className="side-title">{t("commitments")}</h2>
-              <ul className="space-y-3">
+            <BentoCard title={t("commitments")}>
+              <ul className="flex flex-col gap-2.5">
                 {followups.map((f) => (
-                  <li key={f.id} className="text-sm">
-                    <p className="text-pretty">{f.text}</p>
-                    <p className={`text-xs mt-0.5 ${f.status === "lapsed" ? "text-[hsl(var(--warn))]" : "text-muted-foreground"}`}>
+                  <li key={f.id} className="text-xs bg-zinc-900/40 p-2.5 rounded-lg border border-zinc-800/40">
+                    <p className="text-zinc-200 text-pretty">{f.text}</p>
+                    <p className={`text-[11px] font-mono mt-1 ${f.status === "lapsed" ? "text-amber-400" : "text-zinc-500"}`}>
                       {t(f.status === "open" ? "open_status" : f.status)}{f.dueDate && <> · {t("due")}: {f.dueDate}</>}
                     </p>
                   </li>
                 ))}
               </ul>
-            </section>
+            </BentoCard>
           )}
 
-          <section>
-            <details className="disclose">
-              <summary className="side-title !mb-0 hover:text-foreground">
-                <ChevronRight className="chev h-3.5 w-3.5" aria-hidden />{t("room_tools")}
-              </summary>
-              <div className="space-y-0.5 pt-2">
+          {/* ROOM TOOLS & LEAVE */}
+          <BentoCard title={t("room_tools")}>
+            <div className="flex flex-col gap-3">
+              <div className="text-xs text-zinc-400">
                 <DataRights />
               </div>
-            </details>
-          </section>
-
-          <section>
-            <Dialog>
-              <DialogTrigger asChild>
-                <button type="button" className="side-action text-destructive" data-testid="button-leave">{t("leave_room")}</button>
-              </DialogTrigger>
-              <DialogContent data-testid="dialog-leave">
-                <DialogHeader>
-                  <DialogTitle>{t("leave_confirm_title")}</DialogTitle>
-                  <DialogDescription>{t("leave_confirm")}</DialogDescription>
-                </DialogHeader>
-                <div className="flex gap-2 justify-end">
-                  <DialogClose asChild>
-                    <Button variant="ghost" size="sm" data-testid="button-leave-cancel">{t("cancel")}</Button>
-                  </DialogClose>
-                  <Button variant="destructive" size="sm" data-testid="button-leave-confirm" onClick={async () => {
-                    try {
-                      await apiJson("POST", "/api/participant/leave");
-                      setSessionToken(null);
-                      qc.clear();
-                      navigate("/");
-                    } catch (e: any) {
-                      toast({ title: e.message || t("error_generic"), variant: "destructive" });
-                    }
-                  }}>{t("leave_room")}</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </section>
+              <div className="pt-2 border-t border-zinc-800/50">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full text-left text-xs font-medium text-red-400/90 hover:text-red-300 transition-colors py-1 flex items-center justify-between"
+                      data-testid="button-leave"
+                    >
+                      <span>{t("leave_room")}</span>
+                      <span className="text-[10px] font-mono text-zinc-600">EXIT</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent data-testid="dialog-leave" className="bg-[#0e1014] border-neutral-800 text-neutral-200">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">{t("leave_confirm_title")}</DialogTitle>
+                      <DialogDescription className="text-zinc-400">{t("leave_confirm")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex gap-2 justify-end pt-2">
+                      <DialogClose asChild>
+                        <Button variant="ghost" size="sm" data-testid="button-leave-cancel">{t("cancel")}</Button>
+                      </DialogClose>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        data-testid="button-leave-confirm"
+                        onClick={async () => {
+                          try {
+                            await apiJson("POST", "/api/participant/leave");
+                            setSessionToken(null);
+                            qc.clear();
+                            navigate("/");
+                          } catch (e: any) {
+                            toast({ title: e.message || t("error_generic"), variant: "destructive" });
+                          }
+                        }}
+                      >
+                        {t("leave_room")}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </BentoCard>
         </aside>
       </div>
     </Shell>

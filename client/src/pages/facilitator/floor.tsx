@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useRoomCrypto, useEncryptedChat, type CryptoState } from "@/lib/e2ee-client";
 import { ChatShell } from "@/components/chat/chat-shell";
+import { BentoCard } from "@/components/BentoCard";
 import type { Room, Seat } from "@shared/schema";
 import type { Call, SeatName } from "./types";
 
@@ -24,14 +25,13 @@ export function FloorTab({
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 lg:gap-8 items-start">
       <FacilitatorChat room={room} seatName={seatName} active={active} />
-      <aside className="side-panel space-y-0 divide-line [&>section]:py-5 [&>section:first-child]:pt-0">
-        <section>
-          <p className="side-title">{t("floor_controls")}</p>
+      <aside className="w-full flex flex-col gap-3.5 lg:sticky lg:top-20">
+        <BentoCard title={t("floor_controls")}>
           <FloorPanel room={room} admitted={admitted} seatName={seatName} call={call} />
-        </section>
-        <section>
+        </BentoCard>
+        <BentoCard title="Process Stage">
           <ProcessControls room={room} admitted={admitted} seatName={seatName} call={call} />
-        </section>
+        </BentoCard>
       </aside>
     </div>
   );
