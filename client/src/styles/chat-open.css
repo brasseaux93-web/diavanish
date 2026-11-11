@@ -1,0 +1,53 @@
+/* Masterclass chat density pass — import into index.css or link where needed. */
+
+.chat-shell {
+  padding: 1.25rem;
+}
+.chat-scroll {
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.chat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 42rem;
+}
+.chat-meta {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: hsl(var(--card));
+  line-height: 1.5;
+  max-width: 36rem;
+}
+.chat-group.mine .bubble {
+  background: hsl(var(--primary) / 0.12);
+  align-self: flex-end;
+}
+.chat-composer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.chat-composer textarea {
+  flex: 1;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  resize: none;
+}
