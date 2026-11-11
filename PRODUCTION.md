@@ -5,7 +5,7 @@ Diavanish can run as a single-container self-hosted service. The checks below mu
 ## Required before start
 
 1. **Secret** — `DIAVANISH_SECRET` of at least 32 random characters. Generate with `openssl rand -base64 48`. The server exits if this is missing or still set to the example value.
-2. **Administrator** — `DIAVANISH_ADMIN_EMAIL` set to a real address. This becomes the first administrator on first boot.
+2. **Administrator** — `DIAVANISH_ADMIN_EMAIL=admin@diavanish.org` (the real production administrator address). This becomes the first administrator on first boot.
 3. **Email delivery** — either:
    - `RESEND_API_KEY` + `DIAVANISH_MAIL_FROM`, or
    - `DIAVANISH_MAIL_WEBHOOK` (and optional `DIAVANISH_MAIL_WEBHOOK_SECRET`).
@@ -39,20 +39,20 @@ docker compose up -d
 # Or on a host
 export NODE_ENV=production
 export DIAVANISH_SECRET="$(openssl rand -base64 48)"
-export DIAVANISH_ADMIN_EMAIL=you@example.org
+export DIAVANISH_ADMIN_EMAIL=admin@diavanish.org
 export RESEND_API_KEY=re_...
-export DIAVANISH_MAIL_FROM="Diavanish <no-reply@example.org>"
+export DIAVANISH_MAIL_FROM="Diavanish <no-reply@diavanish.org>"
 npm run build
 npm start
 ```
 
-After first boot, sign in as the administrator and review facilitator applications under `/admin/console`.
+After first boot, sign in as admin@diavanish.org and review facilitator applications under `/admin/console`.
 
 ## Checklist
 
 - [ ] Strong secret set and not committed
-- [ ] Real admin email set
-- [ ] Mail delivery tested (request a code and receive it)
+- [ ] Admin email set to admin@diavanish.org
+- [ ] Mail delivery tested (request a code and receive it at admin@diavanish.org)
 - [ ] Database volume persisted and backed up
 - [ ] HTTPS terminator in front of the container
 - [ ] `DIAVANISH_ORIGIN` matches the public URL
